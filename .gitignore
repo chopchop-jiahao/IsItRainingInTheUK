@@ -1,0 +1,14 @@
+# API Keys
+OpenWeatherMapAPI.swift
+
+# Xcode
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+*.xcworkspace/*
+!*.xcworkspace/contents.xcworkspacedata
+xcuserdata/
+DerivedData/
+
+# macOS
+.DS_Store
