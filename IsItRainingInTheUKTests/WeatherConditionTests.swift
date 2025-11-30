@@ -26,6 +26,7 @@ enum WeatherCondition {
     case atmosphere
     case clear
     case clouds
+    case unknown
     
     static func from(id: Int) -> WeatherCondition {
         if group2xx.contains(id) { return .thunderstorm }
@@ -42,7 +43,7 @@ enum WeatherCondition {
         
         if group80x.contains(id) { return .clouds }
         
-        return thunderstorm
+        return unknown
     }
     
     private static var group2xx: [Int] {
@@ -126,5 +127,9 @@ final class WeatherConditionTests: XCTestCase {
         group80x.forEach {
             XCTAssertEqual(.clouds, WeatherCondition.from(id: $0))
         }
+    }
+    
+    func test_fromID_whenUnknownID_returnsUnknown() {
+        XCTAssertEqual(.unknown, WeatherCondition.from(id: 999))
     }
 }
