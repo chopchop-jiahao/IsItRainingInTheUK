@@ -29,7 +29,10 @@ enum WeatherCondition {
     
     static func from(id: Int) -> WeatherCondition {
         if group2xx.contains(id) { return .thunderstorm }
+        
         if group3xx.contains(id) { return .drizzle }
+        
+        if group5xx.contains(id) { return .rain }
         
         return thunderstorm
     }
@@ -40,6 +43,10 @@ enum WeatherCondition {
     
     private static var group3xx: [Int] {
         [300, 301, 302, 310, 311, 312, 313, 314, 321]
+    }
+    
+    private static var group5xx: [Int] {
+        [500, 502, 503, 504, 511, 520, 521, 522, 531]
     }
 }
 
@@ -58,6 +65,14 @@ final class WeatherConditionTests: XCTestCase {
         
         group3xx.forEach {
             XCTAssertEqual(.drizzle, WeatherCondition.from(id: $0))
+        }
+    }
+    
+    func test_fromID_whenIDsInGroup5xx_returnsRain() {
+        let group5xx: [Int] = [500, 502, 503, 504, 511, 520, 521, 522, 531]
+        
+        group5xx.forEach {
+            XCTAssertEqual(.rain, WeatherCondition.from(id: $0))
         }
     }
 }
