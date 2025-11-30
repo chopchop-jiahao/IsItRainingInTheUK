@@ -40,6 +40,8 @@ enum WeatherCondition {
         
         if id == clearSkyId { return .clear }
         
+        if group80x.contains(id) { return .clouds }
+        
         return thunderstorm
     }
     
@@ -65,6 +67,10 @@ enum WeatherCondition {
     
     private static var clearSkyId: Int {
         800
+    }
+    
+    private static var group80x: [Int] {
+        [801, 802, 803, 804]
     }
 }
 
@@ -112,5 +118,13 @@ final class WeatherConditionTests: XCTestCase {
     
     func test_fromID_whenClearSkyId_returnsClear() {
         XCTAssertEqual(.clear, WeatherCondition.from(id: 800))
+    }
+    
+    func test_fromID_whenIDsGroup80x_returnsClouds() {
+        let group80x: [Int] = [801, 802, 803, 804]
+        
+        group80x.forEach {
+            XCTAssertEqual(.clouds, WeatherCondition.from(id: $0))
+        }
     }
 }
