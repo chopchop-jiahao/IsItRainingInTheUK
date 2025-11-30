@@ -36,6 +36,8 @@ enum WeatherCondition {
         
         if group6xx.contains(id) { return .snow }
         
+        if group7xx.contains(id) { return .atmosphere }
+        
         return thunderstorm
     }
     
@@ -53,6 +55,10 @@ enum WeatherCondition {
     
     private static var group6xx: [Int] {
         [600, 601, 602, 611, 611, 613, 615, 616, 620, 621, 622]
+    }
+    
+    private static var group7xx: [Int] {
+        [701, 711, 721, 731, 741, 751, 761, 762, 771, 781]
     }
 }
 
@@ -87,6 +93,14 @@ final class WeatherConditionTests: XCTestCase {
         
         group6xx.forEach {
             XCTAssertEqual(.snow, WeatherCondition.from(id: $0))
+        }
+    }
+    
+    func test_fromID_whenIDsInGroup7xx_returnsAtmosphere() {
+        let group7xx: [Int] = [701, 711, 721, 731, 741, 751, 761, 762, 771, 781]
+        
+        group7xx.forEach {
+            XCTAssertEqual(.atmosphere, WeatherCondition.from(id: $0))
         }
     }
 }
