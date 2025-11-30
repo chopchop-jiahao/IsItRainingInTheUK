@@ -38,6 +38,8 @@ enum WeatherCondition {
         
         if group7xx.contains(id) { return .atmosphere }
         
+        if id == clearSkyId { return .clear }
+        
         return thunderstorm
     }
     
@@ -59,6 +61,10 @@ enum WeatherCondition {
     
     private static var group7xx: [Int] {
         [701, 711, 721, 731, 741, 751, 761, 762, 771, 781]
+    }
+    
+    private static var clearSkyId: Int {
+        800
     }
 }
 
@@ -102,5 +108,9 @@ final class WeatherConditionTests: XCTestCase {
         group7xx.forEach {
             XCTAssertEqual(.atmosphere, WeatherCondition.from(id: $0))
         }
+    }
+    
+    func test_fromID_whenClearSkyId_returnsClear() {
+        XCTAssertEqual(.clear, WeatherCondition.from(id: 800))
     }
 }
