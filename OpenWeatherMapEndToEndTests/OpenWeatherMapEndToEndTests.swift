@@ -35,6 +35,7 @@ final class OpenWeatherMapEndToEndTests: XCTestCase {
     
     let baseURL = "https://api.openweathermap.org/data/3.0/onecall"
     let cheltenham = Location(latitude: 50.90, longtitude: -2.06)
+    let imageURL = "https://openweathermap.org/img/wn/%@@2x.png"
     
     func test_openWeatherMapAPI_returnsWeatherMapData() async {
         let session = URLSession.shared
@@ -66,6 +67,21 @@ final class OpenWeatherMapEndToEndTests: XCTestCase {
             XCTAssertNotNil(currentWeatherData.weather.first, "Expected current weather data to contain weather information, got nil instead")
         } catch {
             XCTFail("Expected the request to succeed, but it failed with error: \(error)")
+        }
+    }
+    
+    func test_imageRequest_returnsImageData() async {
+        let session = URLSession.shared
+        let clearSkyIcon = "01d"
+        let url = URL(string: String(format: imageURL, clearSkyIcon))!
+        
+        do {
+            let (data, response) = try await session.data(for: URLRequest(url: url))
+            let httPResponse = response as! HTTPURLResponse
+            XCTAssertEqual(httPResponse.statusCode, 200)
+            XCTAssertNotNil(NSImage(data: data), "Expected valid image data")
+        } catch {
+            XCTFail("Expected to succeed, but instead got error: \(error)")
         }
     }
 }
