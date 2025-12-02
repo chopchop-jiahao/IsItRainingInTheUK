@@ -8,11 +8,6 @@
 import XCTest
 import IsItRainingInTheUK
 
-struct Location {
-    let latitude: Double
-    let longtitude: Double
-}
-
 struct OpenWeatherMapData: Decodable {
     let current: WeatherData
     let hourly: [WeatherData]
