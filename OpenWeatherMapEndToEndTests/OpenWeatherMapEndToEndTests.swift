@@ -8,24 +8,6 @@
 import XCTest
 import IsItRainingInTheUK
 
-struct OpenWeatherMapData: Decodable {
-    let current: WeatherData
-    let hourly: [WeatherData]
-}
-
-struct WeatherData: Decodable {
-    let dt: Date
-    let temp: Double
-    let weather: [WeatherDescriptionData]
-}
-
-struct WeatherDescriptionData: Decodable {
-    let id: Int
-    let main: String
-    let description: String
-    let icon: String
-}
-
 final class OpenWeatherMapEndToEndTests: XCTestCase {
     
     let baseURL = "https://api.openweathermap.org/data/3.0/onecall"
