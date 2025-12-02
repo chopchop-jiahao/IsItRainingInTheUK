@@ -9,10 +9,6 @@ import XCTest
 import IsItRainingInTheUK
 
 final class OpenWeatherMapEndToEndTests: XCTestCase {
-    
-    let baseURL = "https://api.openweathermap.org/data/3.0/onecall"
-    let cheltenham = Location(latitude: 50.90, longtitude: -2.06)
-    let imageURL = "https://openweathermap.org/img/wn/%@@2x.png"
     let session = URLSession.shared
     
     func test_openWeatherMapAPI_returnsWeatherMapData() async {
@@ -60,7 +56,7 @@ final class OpenWeatherMapEndToEndTests: XCTestCase {
     }
     
     private func makeOpenWeatherMapURL() -> URL {
-        return URL(string: baseURL)!.appending(queryItems: [
+        return URL(string: OpenWeatherMapAPI.baseURL)!.appending(queryItems: [
             URLQueryItem(name: "lat", value: "\(cheltenham.latitude)"),
             URLQueryItem(name: "lon", value: "\(cheltenham.longtitude)"),
             URLQueryItem(name: "exclude", value: "minutely,daily,alerts"),
@@ -72,6 +68,10 @@ final class OpenWeatherMapEndToEndTests: XCTestCase {
     private func makeImageRequestUrl() -> URL {
         let clearSkyIcon = "01d"
         
-        return URL(string: String(format: imageURL, clearSkyIcon))!
+        return URL(string: String(format: OpenWeatherMapAPI.imageURL, clearSkyIcon))!
+    }
+    
+    private var cheltenham: Location {
+        Location(latitude: 50.90, longtitude: -2.06)
     }
 }
