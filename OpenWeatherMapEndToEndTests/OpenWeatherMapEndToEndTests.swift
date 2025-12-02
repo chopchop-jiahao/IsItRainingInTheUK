@@ -56,19 +56,18 @@ final class OpenWeatherMapEndToEndTests: XCTestCase {
     }
     
     func test_imageRequest_returnsImageData() async {
-        let session = URLSession.shared
-        let clearSkyIcon = "01d"
-        let url = URL(string: String(format: imageURL, clearSkyIcon))!
-        
         do {
-            let (data, response) = try await session.data(for: URLRequest(url: url))
+            let (data, response) = try await session.data(for: URLRequest(url: makeImageRequestUrl()))
             let httPResponse = response as! HTTPURLResponse
+            
             XCTAssertEqual(httPResponse.statusCode, 200)
             XCTAssertNotNil(NSImage(data: data), "Expected valid image data")
         } catch {
             XCTFail("Expected to succeed, but instead got error: \(error)")
         }
     }
+    
+    // MARK: - Helpers
     
     private func getWeatherMapData(from url: URL, file: StaticString = #file, line: UInt = #line) async throws -> (HTTPURLResponse, OpenWeatherMapData) {
         let request = URLRequest(url: url)
@@ -91,5 +90,11 @@ final class OpenWeatherMapEndToEndTests: XCTestCase {
             URLQueryItem(name: "units", value: "metric"),
             URLQueryItem(name: "appid", value: OpenWeatherMapAPI.key)
         ])
+    }
+    
+    private func makeImageRequestUrl() -> URL {
+        let clearSkyIcon = "01d"
+        
+        return URL(string: String(format: imageURL, clearSkyIcon))!
     }
 }
