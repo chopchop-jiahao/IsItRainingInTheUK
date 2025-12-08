@@ -8,7 +8,6 @@
 import XCTest
 import IsItRainingInTheUK
 
-// Test getURL and sepate it to a helper
 final class WeatherLoaderTests: XCTestCase {
     
     func test_load_deliversWeatherData() async throws {
@@ -155,7 +154,6 @@ private class MockSession: HTTPSession {
         }
     }
 }
-
 
 enum WeatherCacheAction {
     case get
