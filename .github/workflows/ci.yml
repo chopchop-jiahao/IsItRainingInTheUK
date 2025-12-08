@@ -34,5 +34,5 @@ jobs:
           xcodebuild clean build test \
             -project "IsItRainingInTheUK.xcodeProj" \
             -scheme "CI" \
-            -destination "platform=macos"
+            -destination "platform=macOS,name=Any Mac"
       
