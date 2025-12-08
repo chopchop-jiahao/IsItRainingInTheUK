@@ -81,39 +81,43 @@ final class WeatherLoaderTests: XCTestCase {
     
     func test_load_deliversWeatherData() async throws {
         let (session, sut) = makeSUT()
-        let url = sut.getURL(for: cheltenham)
+        let location = cheltenham
+        let url = sut.getURL(for: location)
         let testData = makeData()
         let expectedData = try openWeatherMapData(from: testData)
         session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
         
-        await expect(sut, toRetrieve: .success(expectedData), for: cheltenham)
+        await expect(sut, toRetrieve: .success(expectedData), for: location)
     }
     
     func test_load_deliverError_whenAPIReturnsError() async throws {
         let (session, sut) = makeSUT()
-        let url = sut.getURL(for: cheltenham)
+        let location = cheltenham
+        let url = sut.getURL(for: location)
         let serverError = URLError(.badServerResponse)
         session.stubs[url] = .failure(serverError)
         
-        await expect(sut, toRetrieve: .failure(serverError), for: cheltenham)
+        await expect(sut, toRetrieve: .failure(serverError), for: location)
     }
     
     func test_load_deliversError_whenAPIReturnsInvalidData() async {
         let (session, sut) = makeSUT()
-        let url = sut.getURL(for: cheltenham)
+        let location = cheltenham
+        let url = sut.getURL(for: location)
         let testData = "Invalid json data".data(using: .utf8)!
         session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
         
-        await expect(sut, toRetrieve: .failure(WeatherServiceError.invalidData), for: cheltenham)
+        await expect(sut, toRetrieve: .failure(WeatherServiceError.invalidData), for: location)
     }
     
     func test_load_deliversError_whenAPIReturnsInvalidResponse() async {
         let (session, sut) = makeSUT()
-        let url = sut.getURL(for: cheltenham)
+        let location = cheltenham
+        let url = sut.getURL(for: location)
         let testData = "Invalid json data".data(using: .utf8)!
         session.stubs[url] = .success((testData, httpResponse(statusCode: 201)))
         
-        await expect(sut, toRetrieve: .failure(WeatherServiceError.invalidResponse), for: cheltenham)
+        await expect(sut, toRetrieve: .failure(WeatherServiceError.invalidResponse), for: location)
     }
     
     // Helpers
