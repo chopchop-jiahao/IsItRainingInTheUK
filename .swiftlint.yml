@@ -1,0 +1,13 @@
+disabled_rules:
+  - opening_brace
+  - vertical_whitespace
+  - trailing_whitespace
+  - line_length
+  - identifier_name
+  - large_tuple
+  - nesting
+  - redundant_self
+
+excluded:
+  - OpenWeatherMapEndToEndTests
+  - IsItRainingInTheUKTests

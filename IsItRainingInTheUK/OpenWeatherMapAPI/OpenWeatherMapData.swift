@@ -10,7 +10,7 @@ import Foundation
 public struct OpenWeatherMapData: Codable, Equatable {
     public let current: WeatherData
     public let hourly: [WeatherData]
-    
+
     public init(current: WeatherData, hourly: [WeatherData]) {
         self.current = current
         self.hourly = hourly
@@ -21,7 +21,7 @@ public struct WeatherData: Codable, Equatable {
     public let dt: Date
     public let temp: Double
     public let weather: [WeatherDescriptionData]
-    
+
     public init(dt: Date, temp: Double, weather: [WeatherDescriptionData]) {
         self.dt = dt
         self.temp = temp
@@ -34,7 +34,7 @@ public struct WeatherDescriptionData: Codable, Equatable {
     public let main: String
     public let description: String
     public let icon: String
-    
+
     public init(id: Int, main: String, description: String, icon: String) {
         self.id = id
         self.main = main
