@@ -41,13 +41,9 @@ class WeatherService: WeatherLoader {
     }
     
     func load(for location: Location) async throws -> OpenWeatherMapData {
-        do {
-            let data = try await session.data(from: getURL(for: location))
-            
-            return try JSONDecoder().decode(OpenWeatherMapData.self, from: data)
-        } catch {
-            throw error
-        }
+        let data = try await session.data(from: getURL(for: location))
+        
+        return try JSONDecoder().decode(OpenWeatherMapData.self, from: data)
     }
     
     public func getURL(for location: Location) -> URL {
