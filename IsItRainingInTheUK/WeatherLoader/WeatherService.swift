@@ -21,6 +21,15 @@ public final class WeatherService: WeatherLoader {
         self.store = store
     }
     
+    
+    /// Loads weather data for the specified location.
+    ///
+    /// This method first checks the cache for existing weather data. If cached data is found,
+    /// it is returned immediately. Otherwise, it fetches fresh data from the API and caches it.
+    ///
+    /// - Parameter location: The geographic location to fetch weather data for.
+    /// - Returns: The weather data for the specified location.
+    /// - Throws: WeatherServiceError, URLFactoryError and errors from the server
     public func load(for location: Location) async throws -> OpenWeatherMapData {
         let url = try URLFactory.getURL(for: location)
         
