@@ -34,13 +34,23 @@ class MockSession: HTTPSession {
 
 // test get to return nil if the caches expires
 // test set updates the cache
+enum WeatherCacheAction {
+    case get
+    case set
+}
+
 class MockStore: WeatherCache {
+    var actions = [WeatherCacheAction]()
+    private var storage = [URL : OpenWeatherMapData]()
+    
     func get(for url: URL) -> OpenWeatherMapData? {
-        return nil
+        actions.append(.get)
+        return storage[url]
     }
     
     func set(_ data: OpenWeatherMapData, for url: URL) {
-        
+        actions.append(.set)
+        storage[url] = data
     }
 }
 
@@ -63,7 +73,9 @@ class WeatherService: WeatherLoader {
     }
     
     func load(for location: Location) async throws -> OpenWeatherMapData {
-        let (data, response) = try await session.data(from: getURL(for: location))
+        let url = getURL(for: location)
+        
+        let (data, response) = try await session.data(from: url)
         
         guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
             throw WeatherServiceError.invalidResponse
@@ -72,6 +84,8 @@ class WeatherService: WeatherLoader {
         guard let weatherData = try? JSONDecoder().decode(OpenWeatherMapData.self, from: data) else {
             throw WeatherServiceError.invalidData
         }
+        
+        store.set(weatherData, for: url)
         
         return weatherData
     }
@@ -149,6 +163,19 @@ final class WeatherLoaderTests: XCTestCase {
         await expect(sut, toRetrieve: .success(expectedData), for: location)
         
         XCTAssertEqual([url], session.calls, "Expected to perform a single request to the API")
+    }
+    
+    func test_load_cachesData_AferRetrievingDataFromAPI() async throws {
+        let (session, sut, store) = makeSUT()
+        let location = cheltenham
+        let url = sut.getURL(for: location)
+        let testData = makeData()
+        let expectedData = try openWeatherMapData(from: testData)
+        session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
+
+        await expect(sut, toRetrieve: .success(expectedData), for: location)
+        
+        XCTAssertEqual([.set], store.actions, "Expected set to be called to cache data in store, but the actions are \(store.actions)")
     }
     
     // Helpers
