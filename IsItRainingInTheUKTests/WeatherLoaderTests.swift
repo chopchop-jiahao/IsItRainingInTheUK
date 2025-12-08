@@ -71,8 +71,6 @@ enum WeatherServiceError: Error {
     case invalidResponse
 }
 
-// Test load delivers error on non-200 HTTP response
-// Test load delivers error on invalid url
 // Test load will call API if there's no cache
 // Test load will call API if cache expires
 // Test load will not call API if cache's not expired
