@@ -29,6 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9787BC7A2EE7290600551094 /* CI.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; path = CI.xctestplan; sourceTree = "<group>"; };
 		97C58E6C2EDC999F0042F109 /* IsItRainingInTheUK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IsItRainingInTheUK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		97C58E772EDC999F0042F109 /* IsItRainingInTheUKTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IsItRainingInTheUKTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		97C58E9A2EDDBE480042F109 /* OpenWeatherMapEndToEndTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenWeatherMapEndToEndTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,6 +83,7 @@
 		97C58E622EDC999F0042F109 = {
 			isa = PBXGroup;
 			children = (
+				9787BC7A2EE7290600551094 /* CI.xctestplan */,
 				97C58E6E2EDC999F0042F109 /* IsItRainingInTheUK */,
 				97C58E7B2EDC999F0042F109 /* IsItRainingInTheUKTests */,
 				97C58E9B2EDDBE480042F109 /* OpenWeatherMapEndToEndTests */,
