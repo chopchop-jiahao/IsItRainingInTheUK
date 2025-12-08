@@ -32,7 +32,7 @@ jobs:
       - name: Build & Test
         run: |
           xcodebuild clean build test \
-            -project "IsItRainingInTheUK.xcodeProj" \
+            -project "IsItRainingInTheUK.xcodeproj" \
             -scheme "CI" \
-            -destination "platform=macOS,name=Any Mac"
+            -destination "platform=macOS"
       
