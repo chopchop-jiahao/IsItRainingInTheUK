@@ -9,6 +9,7 @@ OpenWeatherMapAPI+Ext.swift
 !*.xcworkspace/contents.xcworkspacedata
 xcuserdata/
 DerivedData/
+format.sh
 
 # macOS
 .DS_Store

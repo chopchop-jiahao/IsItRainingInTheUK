@@ -1,0 +1,26 @@
+--swiftversion 5.9
+
+# === Brace style: use K&R style (opening brace stays on same line) ===
+--allman false
+
+# === Indentation ===
+# number of spaces for indentation
+--indent 4
+# indent switch case labels
+--indentcase true
+
+# === Wrapping & line breaks ===
+# wrap function arguments before first argument when breaking
+--wraparguments before-first
+# wrap collection literals before first element when breaking
+--wrapcollections before-first
+# keep commas inline (do not put trailing commas on new lines)
+--commas inline
+
+# === Remove unused args ===
+# remove unused arguments in closures only (default mode is closure-only)
+--stripunusedargs closure-only
+
+# === Disable specific rule that conflicts with preferred multilines ===
+# prevent wrapping that would move braces of multiline statements to new lines
+--disable wrapMultilineStatementBraces

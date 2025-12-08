@@ -1,0 +1,33 @@
+{
+  "configurations" : [
+    {
+      "id" : "DC2DA361-3514-4C79-8006-3A2834586F82",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "performanceAntipatternCheckerEnabled" : true,
+    "testExecutionOrdering" : "random"
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:IsItRainingInTheUK.xcodeproj",
+        "identifier" : "97C58E992EDDBE480042F109",
+        "name" : "OpenWeatherMapEndToEndTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:IsItRainingInTheUK.xcodeproj",
+        "identifier" : "97C58E762EDC999F0042F109",
+        "name" : "IsItRainingInTheUKTests"
+      }
+    }
+  ],
+  "version" : 1
+}

@@ -29,6 +29,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9787BC7A2EE7290600551094 /* CI.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = CI.xctestplan; sourceTree = "<group>"; };
 		97C58E6C2EDC999F0042F109 /* IsItRainingInTheUK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = IsItRainingInTheUK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		97C58E772EDC999F0042F109 /* IsItRainingInTheUKTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IsItRainingInTheUKTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		97C58E9A2EDDBE480042F109 /* OpenWeatherMapEndToEndTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OpenWeatherMapEndToEndTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -82,6 +83,7 @@
 		97C58E622EDC999F0042F109 = {
 			isa = PBXGroup;
 			children = (
+				9787BC7A2EE7290600551094 /* CI.xctestplan */,
 				97C58E6E2EDC999F0042F109 /* IsItRainingInTheUK */,
 				97C58E7B2EDC999F0042F109 /* IsItRainingInTheUKTests */,
 				97C58E9B2EDDBE480042F109 /* OpenWeatherMapEndToEndTests */,
@@ -432,7 +434,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
@@ -477,7 +479,7 @@
 					"@executable_path/../Frameworks",
 					"@loader_path/Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
 				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
@@ -508,7 +510,7 @@
 				DEVELOPMENT_TEAM = ZK642N8MPL;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = chopchop.interactive.IsItRainingInTheUKTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -535,7 +537,7 @@
 				DEVELOPMENT_TEAM = ZK642N8MPL;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = chopchop.interactive.IsItRainingInTheUKTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -559,7 +561,7 @@
 				DEVELOPMENT_TEAM = ZK642N8MPL;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = chopchop.interactive.OpenWeatherMapEndToEndTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -583,7 +585,7 @@
 				DEVELOPMENT_TEAM = ZK642N8MPL;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
-				MACOSX_DEPLOYMENT_TARGET = 26.1;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = chopchop.interactive.OpenWeatherMapEndToEndTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
