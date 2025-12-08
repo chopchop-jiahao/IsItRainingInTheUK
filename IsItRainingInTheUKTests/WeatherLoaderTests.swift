@@ -52,6 +52,10 @@ class MockStore: WeatherCache {
         actions.append(.set)
         storage[url] = data
     }
+    
+    func stub(_ data: OpenWeatherMapData, for url: URL) {
+        storage[url] = data
+    }
 }
 
 protocol WeatherCache {
@@ -74,6 +78,10 @@ class WeatherService: WeatherLoader {
     
     func load(for location: Location) async throws -> OpenWeatherMapData {
         let url = getURL(for: location)
+        
+        if let weatherData = store.get(for: url) {
+            return weatherData
+        }
         
         let (data, response) = try await session.data(from: url)
         
@@ -106,7 +114,6 @@ enum WeatherServiceError: Error {
     case invalidResponse
 }
 
-// Test load will cache data after calling api
 // Test getURL and sepate it to a helper
 final class WeatherLoaderTests: XCTestCase {
     
@@ -175,7 +182,21 @@ final class WeatherLoaderTests: XCTestCase {
 
         await expect(sut, toRetrieve: .success(expectedData), for: location)
         
-        XCTAssertEqual([.set], store.actions, "Expected set to be called to cache data in store, but the actions are \(store.actions)")
+        XCTAssertEqual([.get, .set], store.actions, "Expected store to be called twice: once for the original retrieval and once for the cached data, but the actions are \(store.actions)")
+    }
+    
+    func test_load_retrieveDataFromStore_whenThereIsCachedData() async throws {
+        let (session, sut, store) = makeSUT()
+        let location = cheltenham
+        let url = sut.getURL(for: location)
+        let testData = makeData()
+        let expectedData = try openWeatherMapData(from: testData)
+        store.stub(expectedData, for: url)
+        
+        await expect(sut, toRetrieve: .success(expectedData), for: location)
+        
+        XCTAssertEqual([], session.calls, "Expected no calls to the API, but found \(session.calls) calls instead")
+        XCTAssertEqual([.get], store.actions, "Expected get to be called to retrieve cached data, but the actions are \(store.actions)")
     }
     
     // Helpers
