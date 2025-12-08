@@ -43,7 +43,11 @@ class WeatherService: WeatherLoader {
     func load(for location: Location) async throws -> OpenWeatherMapData {
         let data = try await session.data(from: getURL(for: location))
         
-        return try JSONDecoder().decode(OpenWeatherMapData.self, from: data)
+        guard let weatherData = try? JSONDecoder().decode(OpenWeatherMapData.self, from: data) else {
+            throw WeatherServiceError.invalidData
+        }
+        
+        return weatherData
     }
     
     public func getURL(for location: Location) -> URL {
@@ -57,7 +61,10 @@ class WeatherService: WeatherLoader {
     }
 }
 
-// Test load delivers error when failing to convert JSON data (invalid json data)
+enum WeatherServiceError: Error {
+    case invalidData
+}
+
 // Test load delivers error on non-200 HTTP response
 // Test load delivers error on invalid url
 // Test load will call API if there's no cache
@@ -83,6 +90,15 @@ final class WeatherLoaderTests: XCTestCase {
         session.stubs[url] = .failure(serverError)
         
         await expect(sut, toRetrieve: .failure(serverError), for: cheltenham)
+    }
+    
+    func test_load_deliversError_whenAPIReturnsInvalidData() async {
+        let (session, sut) = makeSUT()
+        let url = sut.getURL(for: cheltenham)
+        let testData = "Invalid json data".data(using: .utf8)!
+        session.stubs[url] = .success(testData)
+        
+        await expect(sut, toRetrieve: .failure(WeatherServiceError.invalidData), for: cheltenham)
     }
     
     // Helpers
