@@ -158,20 +158,6 @@ final class WeatherLoaderTests: XCTestCase {
         await expect(sut, toRetrieve: .failure(WeatherServiceError.invalidResponse), for: location)
     }
     
-    func test_load_callsAPI_whenThereIsNoCachedData() async throws {
-        let (session, sut, store) = makeSUT()
-        let location = cheltenham
-        let url = sut.getURL(for: location)
-        let testData = makeData()
-        let expectedData = try openWeatherMapData(from: testData)
-        session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
-        XCTAssertNil(store.get(for: url), "Expected no cache in the store, but got value instead")
-        
-        await expect(sut, toRetrieve: .success(expectedData), for: location)
-        
-        XCTAssertEqual([url], session.calls, "Expected to perform a single request to the API")
-    }
-    
     func test_load_cachesData_AferRetrievingDataFromAPI() async throws {
         let (session, sut, store) = makeSUT()
         let location = cheltenham
@@ -179,9 +165,10 @@ final class WeatherLoaderTests: XCTestCase {
         let testData = makeData()
         let expectedData = try openWeatherMapData(from: testData)
         session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
-
+        
         await expect(sut, toRetrieve: .success(expectedData), for: location)
         
+        XCTAssertEqual([url], session.calls, "Expected to perform a single request to the API")
         XCTAssertEqual([.get, .set], store.actions, "Expected store to be called twice: once for the original retrieval and once for the cached data, but the actions are \(store.actions)")
     }
     
