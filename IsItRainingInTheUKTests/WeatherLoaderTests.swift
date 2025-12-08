@@ -9,25 +9,26 @@ import XCTest
 import IsItRainingInTheUK
 
 protocol HTTPSession {
-    func data(from url: URL) async throws -> Data
+    func data(from url: URL) async throws -> (Data, URLResponse)
 }
 
 class MockSession: HTTPSession {
-    var stubs = [URL : Result<Data, Error>]()
+    var stubs = [URL : Result<(Data, URLResponse), Error>]()
     
-    func data(from url: URL) async throws -> Data {
+    func data(from url: URL) async throws -> (Data, URLResponse) {
         guard let result = stubs[url] else {
             throw URLError(.badServerResponse)
         }
         
         switch result {
-        case let .success(data):
-            return data
+        case let .success((data, response)):
+            return (data, response)
         case let .failure(error):
             throw error
         }
     }
 }
+
 
 protocol WeatherLoader {
     func load(for location: Location) async throws -> OpenWeatherMapData
@@ -41,7 +42,11 @@ class WeatherService: WeatherLoader {
     }
     
     func load(for location: Location) async throws -> OpenWeatherMapData {
-        let data = try await session.data(from: getURL(for: location))
+        let (data, response) = try await session.data(from: getURL(for: location))
+        
+        guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+            throw WeatherServiceError.invalidResponse
+        }
         
         guard let weatherData = try? JSONDecoder().decode(OpenWeatherMapData.self, from: data) else {
             throw WeatherServiceError.invalidData
@@ -63,6 +68,7 @@ class WeatherService: WeatherLoader {
 
 enum WeatherServiceError: Error {
     case invalidData
+    case invalidResponse
 }
 
 // Test load delivers error on non-200 HTTP response
@@ -78,7 +84,7 @@ final class WeatherLoaderTests: XCTestCase {
         let url = sut.getURL(for: cheltenham)
         let testData = makeData()
         let expectedData = try openWeatherMapData(from: testData)
-        session.stubs[url] = .success(testData)
+        session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
         
         await expect(sut, toRetrieve: .success(expectedData), for: cheltenham)
     }
@@ -96,9 +102,18 @@ final class WeatherLoaderTests: XCTestCase {
         let (session, sut) = makeSUT()
         let url = sut.getURL(for: cheltenham)
         let testData = "Invalid json data".data(using: .utf8)!
-        session.stubs[url] = .success(testData)
+        session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
         
         await expect(sut, toRetrieve: .failure(WeatherServiceError.invalidData), for: cheltenham)
+    }
+    
+    func test_load_deliversError_whenAPIReturnsInvalidResponse() async {
+        let (session, sut) = makeSUT()
+        let url = sut.getURL(for: cheltenham)
+        let testData = "Invalid json data".data(using: .utf8)!
+        session.stubs[url] = .success((testData, httpResponse(statusCode: 201)))
+        
+        await expect(sut, toRetrieve: .failure(WeatherServiceError.invalidResponse), for: cheltenham)
     }
     
     // Helpers
@@ -139,6 +154,10 @@ final class WeatherLoaderTests: XCTestCase {
     
     private func openWeatherMapData(from data: Data) throws -> OpenWeatherMapData {
         return try JSONDecoder().decode(OpenWeatherMapData.self, from: data)
+    }
+    
+    private func httpResponse(statusCode: Int) -> HTTPURLResponse {
+        HTTPURLResponse(url: URL(string: "http://my-url.com")!, statusCode: statusCode, httpVersion: nil, headerFields: nil)!
     }
         
     private var testJson: String {
