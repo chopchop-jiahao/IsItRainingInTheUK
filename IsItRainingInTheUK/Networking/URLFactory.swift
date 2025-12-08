@@ -16,7 +16,7 @@ public enum URLFactory {
         guard let baseURL = URL(string: OpenWeatherMapAPI.baseURL) else {
             throw URLFactoryError.invalidURL
         }
-        
+
         return baseURL.appending(queryItems: [
             URLQueryItem(name: "lat", value: "\(location.latitude)"),
             URLQueryItem(name: "lon", value: "\(location.longitude)"),
