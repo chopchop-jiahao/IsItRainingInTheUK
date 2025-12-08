@@ -29,6 +29,12 @@ jobs:
           brew install swiftlint || true
           swiftlint --config .swiftlint.yml --strict
 
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
       - name: Generate secrets file
         run: |
           cat <<EOF > IsItRainingInTheUK/OpenWeatherMapAPI+Ext.swift
