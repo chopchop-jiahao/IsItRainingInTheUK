@@ -9,10 +9,10 @@ import Foundation
 
 public struct Location {
     public let latitude: Double
-    public let longtitude: Double
+    public let longitude: Double
     
-    public init(latitude: Double, longtitude: Double) {
+    public init(latitude: Double, longitude: Double) {
         self.latitude = latitude
-        self.longtitude = longtitude
+        self.longitude = longitude
     }
 }

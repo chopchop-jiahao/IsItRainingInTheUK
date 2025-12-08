@@ -58,7 +58,7 @@ final class OpenWeatherMapEndToEndTests: XCTestCase {
     private func makeOpenWeatherMapURL() -> URL {
         return URL(string: OpenWeatherMapAPI.baseURL)!.appending(queryItems: [
             URLQueryItem(name: "lat", value: "\(cheltenham.latitude)"),
-            URLQueryItem(name: "lon", value: "\(cheltenham.longtitude)"),
+            URLQueryItem(name: "lon", value: "\(cheltenham.longitude)"),
             URLQueryItem(name: "exclude", value: "minutely,daily,alerts"),
             URLQueryItem(name: "units", value: "metric"),
             URLQueryItem(name: "appid", value: OpenWeatherMapAPI.key)
@@ -72,6 +72,6 @@ final class OpenWeatherMapEndToEndTests: XCTestCase {
     }
     
     private var cheltenham: Location {
-        Location(latitude: 50.90, longtitude: -2.06)
+        Location(latitude: 51.90, longitude: -2.07)
     }
 }
