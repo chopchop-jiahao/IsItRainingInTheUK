@@ -14,11 +14,14 @@ protocol HTTPSession {
 
 class MockSession: HTTPSession {
     var stubs = [URL : Result<(Data, URLResponse), Error>]()
+    var calls = [URL]()
     
     func data(from url: URL) async throws -> (Data, URLResponse) {
         guard let result = stubs[url] else {
             throw URLError(.badServerResponse)
         }
+        
+        calls.append(url)
         
         switch result {
         case let .success((data, response)):
@@ -29,6 +32,20 @@ class MockSession: HTTPSession {
     }
 }
 
+class MockStore: WeatherCache {
+    func get(for url: URL) -> OpenWeatherMapData? {
+        return nil
+    }
+    
+    func set(_ data: OpenWeatherMapData, for url: URL) {
+        
+    }
+}
+
+protocol WeatherCache {
+    func get(for url: URL) -> OpenWeatherMapData?
+    func set(_ data: OpenWeatherMapData, for url: URL)
+}
 
 protocol WeatherLoader {
     func load(for location: Location) async throws -> OpenWeatherMapData
@@ -36,9 +53,11 @@ protocol WeatherLoader {
 
 class WeatherService: WeatherLoader {
     let session: HTTPSession
+    let store: WeatherCache
     
-    init(session: HTTPSession) {
+    init(session: HTTPSession, store: WeatherCache) {
         self.session = session
+        self.store = store
     }
     
     func load(for location: Location) async throws -> OpenWeatherMapData {
@@ -78,7 +97,7 @@ enum WeatherServiceError: Error {
 final class WeatherLoaderTests: XCTestCase {
     
     func test_load_deliversWeatherData() async throws {
-        let (session, sut) = makeSUT()
+        let (session, sut, _) = makeSUT()
         let location = cheltenham
         let url = sut.getURL(for: location)
         let testData = makeData()
@@ -89,7 +108,7 @@ final class WeatherLoaderTests: XCTestCase {
     }
     
     func test_load_deliverError_whenAPIReturnsError() async throws {
-        let (session, sut) = makeSUT()
+        let (session, sut, _) = makeSUT()
         let location = cheltenham
         let url = sut.getURL(for: location)
         let serverError = URLError(.badServerResponse)
@@ -99,7 +118,7 @@ final class WeatherLoaderTests: XCTestCase {
     }
     
     func test_load_deliversError_whenAPIReturnsInvalidData() async {
-        let (session, sut) = makeSUT()
+        let (session, sut, _) = makeSUT()
         let location = cheltenham
         let url = sut.getURL(for: location)
         let testData = "Invalid json data".data(using: .utf8)!
@@ -109,7 +128,7 @@ final class WeatherLoaderTests: XCTestCase {
     }
     
     func test_load_deliversError_whenAPIReturnsInvalidResponse() async {
-        let (session, sut) = makeSUT()
+        let (session, sut, _) = makeSUT()
         let location = cheltenham
         let url = sut.getURL(for: location)
         let testData = "Invalid json data".data(using: .utf8)!
@@ -118,11 +137,25 @@ final class WeatherLoaderTests: XCTestCase {
         await expect(sut, toRetrieve: .failure(WeatherServiceError.invalidResponse), for: location)
     }
     
-    // Helpers
-    private func makeSUT() -> (session: MockSession, WeatherService) {
-        let session = MockSession()
+    func test_load_callsAPI_whenThereIsNoCachedData() async throws {
+        let (session, sut, store) = makeSUT()
+        let location = cheltenham
+        let url = sut.getURL(for: location)
+        let testData = makeData()
+        let expectedData = try openWeatherMapData(from: testData)
+        session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
+        XCTAssertNil(store.get(for: url), "Expected no cache in the store, but got value instead")
         
-        return (session, WeatherService(session: session))
+        await expect(sut, toRetrieve: .success(expectedData), for: location)
+        
+        XCTAssertEqual([url], session.calls, "Expected to perform a single request to the API")
+    }
+    
+    // Helpers
+    private func makeSUT() -> (session: MockSession, WeatherService, store: MockStore) {
+        let session = MockSession()
+        let store = MockStore()
+        return (session, WeatherService(session: session, store: store), store)
     }
     
     private func expect(_ sut: WeatherLoader, toRetrieve expectedResult: Result<OpenWeatherMapData, Error>, for location: Location, file: StaticString = #file, line: UInt = #line) async {
