@@ -32,8 +32,10 @@ jobs:
       - name: Generate secrets file
         run: |
           cat <<EOF > IsItRainingInTheUK/OpenWeatherMapAPI+Ext.swift
-          extension OpenWeatherMapAPI {
-              static let key = "${{ secrets.OPENWEATHERMAP_API_KEY }}"
+          public extension OpenWeatherMapAPI {
+              static var key: String {
+                  "${{ secrets.OPENWEATHERMAP_API_KEY }}"
+              }
           }
           EOF
 
