@@ -61,7 +61,7 @@ class WeatherService: WeatherLoader {
     }
 }
 
-// Test load delivers error when failing to convert JSON data
+// Test load delivers error when failing to convert JSON data (invalid json data)
 // Test load delivers error on non-200 HTTP response
 // Test load delivers error on invalid url
 // Test load will call API if there's no cache
@@ -74,12 +74,10 @@ final class WeatherLoaderTests: XCTestCase {
         let (session, sut) = makeSUT()
         let url = sut.getURL(for: cheltenham)
         let testData = makeData()
-        let expectedData = model(from: testData)
+        let expectedData = try openWeatherMapData(from: testData)
         session.stubs[url] = .success(testData)
         
-        let data = try await sut.load(for: cheltenham)
-        
-        XCTAssertEqual(expectedData, data)
+        await expect(sut, toRetrieve: .success(expectedData), for: cheltenham)
     }
     
     func test_load_deliverError_whenAPIReturnsError() async throws {
@@ -88,12 +86,7 @@ final class WeatherLoaderTests: XCTestCase {
         let serverError = URLError(.badServerResponse)
         session.stubs[url] = .failure(serverError)
         
-        do {
-            _ = try await sut.load(for: cheltenham)
-            XCTFail("Expected the function to throw an error")
-        } catch {
-            XCTAssertEqual(serverError, error as? URLError, "Expected to receive a bad server reponse error from the API, but the error was not expected error or not URLError")
-        }
+        await expect(sut, toRetrieve: .failure(serverError), for: cheltenham)
     }
     
     // Helpers
@@ -101,6 +94,27 @@ final class WeatherLoaderTests: XCTestCase {
         let session = MockSession()
         
         return (session, WeatherService(session: session))
+    }
+    
+    private func expect(_ sut: WeatherLoader, toRetrieve expectedResult: Result<OpenWeatherMapData, Error>, for location: Location, file: StaticString = #file, line: UInt = #line) async {
+        let retrievedResult = await Result(asyncCatching: {
+            try await sut.load(for: location)
+        })
+        
+        switch (expectedResult, retrievedResult) {
+        case let (.success(expectedData), .success(retrievedData)):
+            XCTAssertEqual(expectedData, retrievedData, "Expected to retrieve \(expectedData), but got \(retrievedData) instead", file: file, line: line)
+            
+        case let (.failure(expectedError as NSError), .failure(retrievedError as NSError)):
+            XCTAssertEqual(expectedError.code, retrievedError.code, "Expected to retrieve error with code \(expectedError.code), but got \(retrievedError.code) instead", file: file, line: line)
+            XCTAssertEqual(expectedError.domain, retrievedError.domain, "Expected to retrieve error with domain \(expectedError.domain), but got \(retrievedError.domain) instead", file: file, line: line)
+                    
+        case let (.success, .failure(retrievedError)):
+            XCTFail("Expected the load to succeed, but got a failure with \(retrievedError) instead.", file: file, line: line)
+            
+        case let (.failure, .success(retrievedWeatherData)):
+            XCTFail("Expected the load to fail, but got a succes with \(retrievedWeatherData) instead", file: file, line: line)
+        }
     }
     
     private var cheltenham: Location {
@@ -111,8 +125,8 @@ final class WeatherLoaderTests: XCTestCase {
         return testJson.data(using: .utf8)!
     }
     
-    private func model(from data: Data) -> OpenWeatherMapData {
-        return try! JSONDecoder().decode(OpenWeatherMapData.self, from: data)
+    private func openWeatherMapData(from data: Data) throws -> OpenWeatherMapData {
+        return try JSONDecoder().decode(OpenWeatherMapData.self, from: data)
     }
         
     private var testJson: String {
@@ -122,3 +136,13 @@ final class WeatherLoaderTests: XCTestCase {
     }
 }
 
+extension Result {
+    init(asyncCatching body: () async throws -> Success) async where Failure == Error {
+        do {
+            let result = try await body()
+            self = .success(result)
+        } catch {
+            self = .failure(error)
+        }
+    }
+}
