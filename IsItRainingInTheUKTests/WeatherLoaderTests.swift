@@ -32,6 +32,8 @@ class MockSession: HTTPSession {
     }
 }
 
+// test get to return nil if the caches expires
+// test set updates the cache
 class MockStore: WeatherCache {
     func get(for url: URL) -> OpenWeatherMapData? {
         return nil
@@ -90,9 +92,7 @@ enum WeatherServiceError: Error {
     case invalidResponse
 }
 
-// Test load will call API if there's no cache
-// Test load will call API if cache expires
-// Test load will not call API if cache's not expired
+// Test load will cache data after calling api
 // Test getURL and sepate it to a helper
 final class WeatherLoaderTests: XCTestCase {
     
