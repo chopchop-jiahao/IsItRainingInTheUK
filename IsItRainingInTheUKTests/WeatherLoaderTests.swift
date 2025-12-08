@@ -8,79 +8,6 @@
 import XCTest
 import IsItRainingInTheUK
 
-protocol HTTPSession {
-    func data(from url: URL) async throws -> (Data, URLResponse)
-}
-
-// test get to return nil if the caches expires
-// test set updates the cache
-protocol WeatherCache {
-    func get(for url: URL) -> OpenWeatherMapData?
-    func set(_ data: OpenWeatherMapData, for url: URL)
-}
-
-protocol WeatherLoader {
-    func load(for location: Location) async throws -> OpenWeatherMapData
-}
-
-enum URLFactoryError: Error {
-    case invalidURL
-}
-
-
-enum URLFactory {
-    public static func getURL(for location: Location) throws -> URL {
-        guard let baseURL = URL(string: OpenWeatherMapAPI.baseURL) else {
-            throw URLFactoryError.invalidURL
-        }
-        
-        return baseURL.appending(queryItems: [
-            URLQueryItem(name: "lat", value: "\(location.latitude)"),
-            URLQueryItem(name: "lon", value: "\(location.longitude)"),
-            URLQueryItem(name: "exclude", value: "minutely,daily,alerts"),
-            URLQueryItem(name: "units", value: "metric"),
-            URLQueryItem(name: "appid", value: OpenWeatherMapAPI.key)
-        ])
-    }
-}
-
-class WeatherService: WeatherLoader {
-    let session: HTTPSession
-    let store: WeatherCache
-    
-    init(session: HTTPSession, store: WeatherCache) {
-        self.session = session
-        self.store = store
-    }
-    
-    func load(for location: Location) async throws -> OpenWeatherMapData {
-        let url = try URLFactory.getURL(for: location)
-        
-        if let weatherData = store.get(for: url) {
-            return weatherData
-        }
-        
-        let (data, response) = try await session.data(from: url)
-        
-        guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-            throw WeatherServiceError.invalidResponse
-        }
-        
-        guard let weatherData = try? JSONDecoder().decode(OpenWeatherMapData.self, from: data) else {
-            throw WeatherServiceError.invalidData
-        }
-        
-        store.set(weatherData, for: url)
-        
-        return weatherData
-    }
-}
-
-enum WeatherServiceError: Error {
-    case invalidData
-    case invalidResponse
-}
-
 // Test getURL and sepate it to a helper
 final class WeatherLoaderTests: XCTestCase {
     
@@ -154,7 +81,7 @@ final class WeatherLoaderTests: XCTestCase {
     }
     
     // Helpers
-    private func makeSUT() -> (session: MockSession, WeatherService, store: MockStore) {
+    private func makeSUT() -> (session: MockSession, WeatherLoader, store: MockStore) {
         let session = MockSession()
         let store = MockStore()
         return (session, WeatherService(session: session, store: store), store)
