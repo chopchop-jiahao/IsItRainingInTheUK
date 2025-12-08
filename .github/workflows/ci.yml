@@ -29,6 +29,14 @@ jobs:
           brew install swiftlint || true
           swiftlint --config .swiftlint.yml --strict
 
+      - name: Generate secrets file
+        run: |
+          cat <<EOF > IsItRainingInTheUK/OpenWeatherMapAPI+Ext.swift
+          extension OpenWeatherMapAPI {
+              static let key = "${{ secrets.OPENWEATHERMAP_API_KEY }}"
+          }
+          EOF
+
       - name: Build & Test
         run: |
           xcodebuild clean build test \
