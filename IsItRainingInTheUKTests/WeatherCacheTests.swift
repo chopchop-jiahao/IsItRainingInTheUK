@@ -29,9 +29,10 @@ final class WeatherCacheTests: XCTestCase {
     }
 
     func test_get_returnsNil_whenDataOnExpiration() throws {
-        let sut = makeSUT()
+        let now = Date.now
+        let sut = makeSUT(currentTime: { now })
         let url = anyURL
-        let timestamp = makeTimestampOnExpiration(maxAge: sut.maxAge)
+        let timestamp = makeTimestampOnExpiration(from: now, maxAge: sut.maxAge)
         try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: timestamp, for: url)
 
         let cache = sut.get(for: url)
@@ -40,9 +41,10 @@ final class WeatherCacheTests: XCTestCase {
     }
 
     func test_get_returnsData_whenDataNotExpired() throws {
-        let sut = makeSUT()
+        let now = Date.now
+        let sut = makeSUT(currentTime: { now })
         let url = anyURL
-        let timestamp = makeTimestampBeforeExpiration(maxAge: sut.maxAge)
+        let timestamp = makeTimestampBeforeExpiration(from: now, maxAge: sut.maxAge)
         try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: timestamp, for: url)
 
         let cache = sut.get(for: url)
@@ -51,9 +53,10 @@ final class WeatherCacheTests: XCTestCase {
     }
 
     func test_get_returnsNil_whenDataExpired() throws {
-        let sut = makeSUT()
+        let now = Date.now
+        let sut = makeSUT(currentTime: { now })
         let url = anyURL
-        let timestamp = makeTimestampAfterExpiration(maxAge: sut.maxAge)
+        let timestamp = makeTimestampAfterExpiration(from: now, maxAge: sut.maxAge)
         try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: timestamp, for: url)
 
         let cache = sut.get(for: url)
@@ -61,23 +64,23 @@ final class WeatherCacheTests: XCTestCase {
         XCTAssertNil(cache)
     }
 
-    private func makeSUT() -> WeatherCache {
-        WeatherStore()
+    private func makeSUT(currentTime: @escaping () -> Date = Date.init) -> WeatherCache {
+        WeatherStore(currentTime: currentTime)
     }
 
     private var anyURL: URL {
         URL(string: "any-url")!
     }
 
-    private func makeTimestampOnExpiration(maxAge: TimeInterval) -> Date {
-        Date.now.addingTimeInterval(-maxAge)
+    private func makeTimestampOnExpiration(from timestamp: Date, maxAge: TimeInterval) -> Date {
+        timestamp.addingTimeInterval(-maxAge)
     }
 
-    private func makeTimestampBeforeExpiration(maxAge: TimeInterval) -> Date {
-        Date.now.addingTimeInterval(-maxAge + 1)
+    private func makeTimestampBeforeExpiration(from timestamp: Date, maxAge: TimeInterval) -> Date {
+        timestamp.addingTimeInterval(-maxAge + 1)
     }
 
-    private func makeTimestampAfterExpiration(maxAge: TimeInterval) -> Date {
-        Date.now.addingTimeInterval(-maxAge - 1)
+    private func makeTimestampAfterExpiration(from timestamp: Date, maxAge: TimeInterval) -> Date {
+        timestamp.addingTimeInterval(-maxAge - 1)
     }
 }

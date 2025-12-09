@@ -9,8 +9,11 @@ import Foundation
 
 public class WeatherStore: WeatherCache {
     private var cache = [URL: CachedWeatherData]()
+    private let currentTime: () -> Date
 
-    public init() {}
+    public init(currentTime: @escaping () -> Date = Date.init) {
+        self.currentTime = currentTime
+    }
 
     public let maxAge: TimeInterval = 600
 
@@ -20,7 +23,7 @@ public class WeatherStore: WeatherCache {
             return nil
         }
 
-        return isCacheExpired(from: cachedData.timestamp, to: Date.now) ? nil : cachedData.data
+        return isCacheExpired(from: cachedData.timestamp, to: currentTime()) ? nil : cachedData.data
     }
 
     /// Stores weather data with a timestamp for the given URL.
