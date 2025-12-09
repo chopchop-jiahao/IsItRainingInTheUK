@@ -49,8 +49,6 @@ jobs:
           xcodebuild clean build test \
             -project "IsItRainingInTheUK.xcodeproj" \
             -scheme "CI" \
-            -enableCodeCoverage YES \
-            -resultBundlePath TestResults.xcresult \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
