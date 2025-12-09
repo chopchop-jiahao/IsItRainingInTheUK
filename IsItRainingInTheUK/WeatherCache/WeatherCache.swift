@@ -8,6 +8,7 @@
 import Foundation
 
 public protocol WeatherCache {
+    var maxAge: TimeInterval { get }
     func get(for url: URL) -> OpenWeatherMapData?
-    func set(_ data: OpenWeatherMapData, for url: URL)
+    func set(_ data: OpenWeatherMapData, timestamp: Date, for url: URL)
 }

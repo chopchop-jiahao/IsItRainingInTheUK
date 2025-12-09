@@ -147,6 +147,10 @@ private class MockSession: HTTPSession {
 }
 
 private class MockStore: WeatherCache {
+    var maxAge: TimeInterval {
+        600
+    }
+    
     var actions = [WeatherCacheAction]()
     private var storage = [URL: OpenWeatherMapData]()
 
@@ -155,7 +159,7 @@ private class MockStore: WeatherCache {
         return storage[url]
     }
 
-    func set(_ data: OpenWeatherMapData, for url: URL) {
+    func set(_ data: OpenWeatherMapData, timestamp: Date, for url: URL) {
         actions.append(.set)
         storage[url] = data
     }
