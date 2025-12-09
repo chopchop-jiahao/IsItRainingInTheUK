@@ -8,8 +8,6 @@
 import XCTest
 import IsItRainingInTheUK
 
-// test get to return nil if the caches expires
-// test set updates the cache
 class WeatherStore: WeatherCache {
     private var cache = [URL : CachedWeatherData]()
     let maxAge: TimeInterval = 600
@@ -27,7 +25,7 @@ class WeatherStore: WeatherCache {
     }
     
     private func isCacheExpired(from pastTimestamp: Date, to timestamp: Date) -> Bool {
-        timestamp.timeIntervalSince(pastTimestamp) > maxAge
+        timestamp.timeIntervalSince(pastTimestamp) >= maxAge
     }
 }
 
@@ -59,10 +57,9 @@ final class WeatherCacheTests: XCTestCase {
     
     func test_get_returnsNil_whenDataOnExpiration() throws {
         let sut = makeSUT()
-        let data = openWeatherMapJsonData()
         let url = anyURL
-        let timestamp = makeTimestampOnExpiration(expiration: sut.maxAge)
-        try sut.set(openWeatherMapData(from: data), timestamp: timestamp, for: url)
+        let timestamp = makeTimestampOnExpiration(maxAge: sut.maxAge)
+        try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: timestamp, for: url)
         
         let cache = sut.get(for: url)
         
@@ -71,10 +68,9 @@ final class WeatherCacheTests: XCTestCase {
     
     func test_get_returnsData_whenDataNotExpired() throws {
         let sut = makeSUT()
-        let data = openWeatherMapJsonData()
         let url = anyURL
-        let timestamp = makeTimestampBeforeExpiration(expiration: sut.maxAge)
-        try sut.set(openWeatherMapData(from: data), timestamp: timestamp, for: url)
+        let timestamp = makeTimestampBeforeExpiration(maxAge: sut.maxAge)
+        try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: timestamp, for: url)
         
         let cache = sut.get(for: url)
         
@@ -83,10 +79,9 @@ final class WeatherCacheTests: XCTestCase {
     
     func test_get_returnsNil_whenDataExpired() throws {
         let sut = makeSUT()
-        let data = openWeatherMapJsonData()
         let url = anyURL
-        let timestamp = makeTimestampAfterExpiration(expiration: sut.maxAge)
-        try sut.set(openWeatherMapData(from: data), timestamp: timestamp, for: url)
+        let timestamp = makeTimestampAfterExpiration(maxAge: sut.maxAge)
+        try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: timestamp, for: url)
         
         let cache = sut.get(for: url)
         
@@ -101,15 +96,15 @@ final class WeatherCacheTests: XCTestCase {
         URL(string: "any-url")!
     }
     
-    private func makeTimestampOnExpiration(expiration: TimeInterval) -> Date {
-        Date.now.addingTimeInterval(-expiration)
+    private func makeTimestampOnExpiration(maxAge: TimeInterval) -> Date {
+        Date.now.addingTimeInterval(-maxAge)
     }
     
-    private func makeTimestampBeforeExpiration(expiration: TimeInterval) -> Date {
-        Date.now.addingTimeInterval(-expiration + 1)
+    private func makeTimestampBeforeExpiration(maxAge: TimeInterval) -> Date {
+        Date.now.addingTimeInterval(-maxAge + 1)
     }
     
-    private func makeTimestampAfterExpiration(expiration: TimeInterval) -> Date {
-        Date.now.addingTimeInterval(-expiration - 1)
+    private func makeTimestampAfterExpiration(maxAge: TimeInterval) -> Date {
+        Date.now.addingTimeInterval(-maxAge - 1)
     }
 }
