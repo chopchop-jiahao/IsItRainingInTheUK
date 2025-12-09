@@ -150,7 +150,7 @@ private class MockStore: WeatherCache {
     var maxAge: TimeInterval {
         600
     }
-    
+
     var actions = [WeatherCacheAction]()
     private var storage = [URL: OpenWeatherMapData]()
 
