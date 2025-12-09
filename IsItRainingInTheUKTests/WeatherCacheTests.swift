@@ -69,6 +69,18 @@ final class WeatherCacheTests: XCTestCase {
         XCTAssertNil(cache)
     }
     
+    func test_get_returnsData_whenDataNotExpired() throws {
+        let sut = makeSUT()
+        let data = openWeatherMapJsonData()
+        let url = anyURL
+        let timestamp = makeTimestampBeforeExpiration(expiration: sut.maxAge)
+        try sut.set(openWeatherMapData(from: data), timestamp: timestamp, for: url)
+        
+        let cache = sut.get(for: url)
+        
+        XCTAssertNotNil(cache)
+    }
+    
     private func makeSUT() -> WeatherCache {
         WeatherStore()
     }
@@ -79,5 +91,9 @@ final class WeatherCacheTests: XCTestCase {
     
     private func makeTimestampOnExpiration(expiration: TimeInterval) -> Date {
         Date.now.addingTimeInterval(-expiration)
+    }
+    
+    private func makeTimestampBeforeExpiration(expiration: TimeInterval) -> Date {
+        Date.now.addingTimeInterval(-expiration + 1)
     }
 }
