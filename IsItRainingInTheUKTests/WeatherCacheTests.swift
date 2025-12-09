@@ -8,32 +8,6 @@
 import XCTest
 import IsItRainingInTheUK
 
-class WeatherStore: WeatherCache {
-    private var cache = [URL : CachedWeatherData]()
-    let maxAge: TimeInterval = 600
-    
-    func get(for url: URL) -> OpenWeatherMapData? {
-        guard let cachedData = cache[url] else {
-            return nil
-        }
-        
-        return isCacheExpired(from: cachedData.timestamp, to: Date.now) ? nil : cachedData.data
-    }
-    
-    func set(_ data: OpenWeatherMapData, timestamp: Date, for url: URL) {
-        cache[url] = .init(data: data, timestamp: timestamp)
-    }
-    
-    private func isCacheExpired(from pastTimestamp: Date, to timestamp: Date) -> Bool {
-        timestamp.timeIntervalSince(pastTimestamp) >= maxAge
-    }
-}
-
-struct CachedWeatherData {
-    let data: OpenWeatherMapData
-    let timestamp: Date
-}
-
 final class WeatherCacheTests: XCTestCase {
     
     func test_get_returnsNil_whenNoDataStored() {
