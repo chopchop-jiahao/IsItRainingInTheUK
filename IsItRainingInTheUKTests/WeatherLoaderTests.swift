@@ -82,7 +82,13 @@ final class WeatherLoaderTests: XCTestCase {
     private func makeSUT() -> (session: MockSession, WeatherLoader, store: MockStore) {
         let session = MockSession()
         let store = MockStore()
-        return (session, WeatherService(session: session, store: store), store)
+        let sut = WeatherService(session: session, store: store)
+        
+        trackForMemoryLeaks(session)
+        trackForMemoryLeaks(store)
+        trackForMemoryLeaks(sut)
+        
+        return (session, sut, store)
     }
 
     private func expect(_ sut: WeatherLoader, toRetrieve expectedResult: Result<OpenWeatherMapData, Error>, for location: Location, file: StaticString = #file, line: UInt = #line) async {
