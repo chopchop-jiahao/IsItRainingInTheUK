@@ -44,7 +44,21 @@ jobs:
           xcodebuild clean build test \
             -project "IsItRainingInTheUK.xcodeproj" \
             -scheme "CI" \
+            -derivedDataPath Build/ \
+            -enableCodeCoverage YES \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
+
+      - name: Generate coverage report
+        run: |
+          brew install jq
+          curl -o xccov-to-sonarqube-generic.sh https://raw.githubusercontent.com/SonarSource/sonar-scanning-examples/master/swift-coverage/swift-coverage-example/xccov-to-sonarqube-generic.sh
+          chmod +x xccov-to-sonarqube-generic.sh
+          ./xccov-to-sonarqube-generic.sh Build/Logs/Test/*.xcresult > coverage.xml
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       
