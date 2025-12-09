@@ -9,6 +9,15 @@
     }
   ],
   "defaultOptions" : {
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:IsItRainingInTheUK.xcodeproj",
+          "identifier" : "97C58E6B2EDC999F0042F109",
+          "name" : "IsItRainingInTheUK"
+        }
+      ]
+    },
     "performanceAntipatternCheckerEnabled" : true
   },
   "testTargets" : [
