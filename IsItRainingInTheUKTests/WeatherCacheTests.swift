@@ -63,6 +63,28 @@ final class WeatherCacheTests: XCTestCase {
 
         XCTAssertNil(cache)
     }
+    
+    func test_set_executesExclusively_blocksConcurrentOperations() async throws {
+        let sut = makeSUT()
+        
+        let concurrentCaller1 = Task {
+            for _ in 0...3 {
+                try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: Date(), for: anyURL)
+            }
+        }
+        
+        let concurrentCaller2 = Task {
+            for _ in 0...3 {
+                try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: Date(), for: anyURL)
+            }
+        }
+        
+        _ = try await (concurrentCaller1.value, concurrentCaller2.value)
+        
+        let result = sut.get(for: anyURL)
+        XCTAssertNotNil(result, "Expected data to be intact after concurrent operations")
+    }
+
 
     private func makeSUT(currentTime: @escaping () -> Date = Date.init) -> WeatherCache {
         WeatherStore(currentTime: currentTime)
