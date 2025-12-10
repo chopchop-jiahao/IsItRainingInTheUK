@@ -7,9 +7,8 @@
 
 import Foundation
 
-// test get to return nil if the caches expires
-// test set updates the cache
 public protocol WeatherCache {
+    var maxAge: TimeInterval { get }
     func get(for url: URL) -> OpenWeatherMapData?
-    func set(_ data: OpenWeatherMapData, for url: URL)
+    func set(_ data: OpenWeatherMapData, timestamp: Date, for url: URL)
 }

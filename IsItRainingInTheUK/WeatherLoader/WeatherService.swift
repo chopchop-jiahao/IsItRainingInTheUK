@@ -46,7 +46,7 @@ public final class WeatherService: WeatherLoader {
             throw WeatherServiceError.invalidData
         }
 
-        store.set(weatherData, for: url)
+        store.set(weatherData, timestamp: Date.now, for: url)
 
         return weatherData
     }
