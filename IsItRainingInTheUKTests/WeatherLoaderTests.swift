@@ -83,11 +83,11 @@ final class WeatherLoaderTests: XCTestCase {
         let session = MockSession()
         let store = MockStore()
         let sut = WeatherService(session: session, store: store)
-        
+
         trackForMemoryLeaks(session)
         trackForMemoryLeaks(store)
         trackForMemoryLeaks(sut)
-        
+
         return (session, sut, store)
     }
 
