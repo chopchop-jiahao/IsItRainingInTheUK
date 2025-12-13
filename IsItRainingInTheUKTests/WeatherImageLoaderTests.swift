@@ -49,9 +49,16 @@ class WeatherImageService: WeatherImageLoader {
 final class WeatherImageLoaderTests: XCTestCase {
     
     func test_load_returnsImageDataFromAPI() async throws {
-        let (sut, _) = makeSUT()
+        let (sut, session) = makeSUT()
         
-        let data = try await sut.load(imageWithCode: "01d")
+        
+        let loadOperation =  Task {
+            try await sut.load(imageWithCode: "01d")
+        }
+        
+        session.complete(with: .success((makeMockImageData(), URLResponse())), at: 0)
+        
+        let data = try await loadOperation.value
         
         XCTAssertNotNil(NSImage(data: data))
     }
@@ -62,14 +69,8 @@ final class WeatherImageLoaderTests: XCTestCase {
         let sut = WeatherImageService(session: session)
         return (sut, session)
     }
-}
-
-private class MockSession: HTTPSession {
-    func data(from url: URL) async throws -> (Data, URLResponse) {
-        return (makeMockImageData(), URLResponse())
-    }
     
-    func makeMockImageData() -> Data {
+    private func makeMockImageData() -> Data {
         let image = NSImage(size: NSSize(width: 1, height: 1))
         image.lockFocus()
         NSColor.red.drawSwatch(in: NSRect(x: 0, y: 0, width: 1, height: 1))
@@ -78,5 +79,16 @@ private class MockSession: HTTPSession {
         let tiffData = image.tiffRepresentation!
         let bitmap = NSBitmapImageRep(data: tiffData)!
         return bitmap.representation(using: .png, properties: [:])!
+    }
+}
+
+private class MockSession: HTTPSession, AsyncStubbed {
+    var continuations = [CheckedContinuation<(Data, URLResponse), Error>]()
+    
+    typealias Stub = (Data, URLResponse)
+    
+    
+    func data(from url: URL) async throws -> (Data, URLResponse) {
+        try await wait()
     }
 }
