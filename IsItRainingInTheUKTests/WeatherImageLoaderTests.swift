@@ -12,6 +12,10 @@ protocol WeatherImageLoader {
     func load(imageWithCode: String) async throws -> Data
 }
 
+enum WeatherImageServiceError: Error {
+    case invalidResponse
+}
+
 class WeatherImageService: WeatherImageLoader {
     let session: HTTPSession
     
@@ -22,7 +26,11 @@ class WeatherImageService: WeatherImageLoader {
     func load(imageWithCode code: String) async throws -> Data {
         let url = makeImageRequestUrl(withCode: code)
         
-        let (data, _) = try await session.data(from: url)
+        let (data, response) = try await session.data(from: url)
+        
+        guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+            throw WeatherImageServiceError.invalidResponse
+        }
         
         return data
     }
@@ -37,7 +45,6 @@ class WeatherImageService: WeatherImageLoader {
  if the image can be found in store, returns from store
  if not, calling api and store the image, and return the image data
  
- delivers error when not 200
  delivers error when not valid image data
  delivers image when data valid
  it saves image to store
@@ -47,23 +54,24 @@ class WeatherImageService: WeatherImageLoader {
 
 final class WeatherImageLoaderTests: XCTestCase {
     
-    func test_load_returnsImageDataFromAPI() async throws {
+    func test_load_deliversImageData_whenAPIReturnsValidResponseAndImageData() async throws {
         let (sut, session) = makeSUT()
+        let validResponse = httpResponse(statusCode: 200)
         let imageData = makeMockImageData()
         
         let load =  Task {
             try await sut.load(imageWithCode: "01d")
         }
         
-        try await session.complete(with: .success((imageData, URLResponse())), at: 0)
+        try await session.complete(with: .success((imageData, validResponse)), at: 0)
         
         let data = try await load.value
         
-        XCTAssertNotNil(NSImage(data: data))
+        XCTAssertNotNil(NSImage(data: data), "Expected to get valid image data, but found invalid image data instead")
     }
     
     
-    func test_load_deliversErrorOnServerError() async throws {
+    func test_load_deliversError_whenAPIReturnsServerError() async throws {
         let (sut, session) = makeSUT()
         let serverError = URLError(.badServerResponse) as NSError
         
@@ -76,12 +84,34 @@ final class WeatherImageLoaderTests: XCTestCase {
         
         do {
             _ = try await load.value
+            XCTFail("Expected to fail, but it succeeded")
         } catch {
             let nsError = error as NSError
-            XCTAssertEqual(serverError, nsError)
+            XCTAssertEqual(serverError, nsError, "Expected to received \(serverError), but got \(nsError) instead")
         }
     }
     
+    func test_load_deliversError_whenAPIReturnsInvalidResponse() async throws {
+        let (sut, session) = makeSUT()
+        let imageData = makeMockImageData()
+        let invalidResponse = httpResponse(statusCode: 201) as URLResponse
+        let invalidResponseError = WeatherImageServiceError.invalidResponse as NSError
+        
+        
+        let load =  Task {
+            try await sut.load(imageWithCode: "01d")
+        }
+        
+        try await session.complete(with: .success((imageData, invalidResponse)), at: 0)
+        
+        do {
+            _ = try await load.value
+            XCTFail("Expected to fail, but it succeeded")
+        } catch {
+            let nsError = error as NSError
+            XCTAssertEqual(invalidResponseError, nsError, "Expected to received \(invalidResponseError), but got \(nsError) instead")
+        }
+    }
 
     // Helpers
     private func makeSUT() -> (WeatherImageLoader, MockSession) {
