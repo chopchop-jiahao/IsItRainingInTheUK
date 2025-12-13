@@ -56,7 +56,6 @@ class WeatherImageService: WeatherImageLoader {
  if the image can be found in store, returns from store
  if not, calling api and store the image, and return the image data
  
- delivers image when data valid
  it saves image to store
  delivers image from store
  calls api if file's not in store
@@ -108,6 +107,11 @@ final class WeatherImageLoaderTests: XCTestCase {
         let session = MockSession()
         let validator = MockValidator()
         let sut = WeatherImageService(session: session, imageDataValidator: validator)
+        
+        trackForMemoryLeaks(session)
+        trackForMemoryLeaks(validator)
+        trackForMemoryLeaks(sut)
+        
         return (sut, session, validator)
     }
     
