@@ -14,6 +14,7 @@ protocol WeatherImageLoader {
 
 enum WeatherImageServiceError: Error {
     case invalidResponse
+    case invalidImageData
 }
 
 class WeatherImageService: WeatherImageLoader {
@@ -32,6 +33,10 @@ class WeatherImageService: WeatherImageLoader {
             throw WeatherImageServiceError.invalidResponse
         }
         
+        guard let _ = NSImage(data: data) else {
+            throw WeatherImageServiceError.invalidImageData
+        }
+        
         return data
     }
     
@@ -45,7 +50,6 @@ class WeatherImageService: WeatherImageLoader {
  if the image can be found in store, returns from store
  if not, calling api and store the image, and return the image data
  
- delivers error when not valid image data
  delivers image when data valid
  it saves image to store
  delivers image from store
@@ -78,6 +82,16 @@ final class WeatherImageLoaderTests: XCTestCase {
         
         
         try await expect(sut, toCompleteWith: .failure(invalidResponseError), when: session, completesWith: .success((imageData, invalidResponse)))
+    }
+    
+    func test_load_deliversError_whenAPIReturnsInvalidImageData() async throws {
+        let (sut, session) = makeSUT()
+        let invalidData = "Invalid Data".data(using: .utf8)!
+        let validResponse = httpResponse(statusCode: 200) as URLResponse
+        let invalidImageDataError = WeatherImageServiceError.invalidImageData as NSError
+        
+        
+        try await expect(sut, toCompleteWith: .failure(invalidImageDataError), when: session, completesWith: .success((invalidData, validResponse)))
     }
 
     // Helpers
