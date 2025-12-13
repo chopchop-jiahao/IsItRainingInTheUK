@@ -59,15 +59,7 @@ final class WeatherImageLoaderTests: XCTestCase {
         let validResponse = httpResponse(statusCode: 200)
         let imageData = makeMockImageData()
         
-        let load =  Task {
-            try await sut.load(imageWithCode: "01d")
-        }
-        
-        try await session.complete(with: .success((imageData, validResponse)), at: 0)
-        
-        let data = try await load.value
-        
-        XCTAssertNotNil(NSImage(data: data), "Expected to get valid image data, but found invalid image data instead")
+        try await expect(sut, toCompleteWith: .success(imageData), when: session, completesWith: .success((imageData, validResponse)))
     }
     
     
@@ -75,20 +67,7 @@ final class WeatherImageLoaderTests: XCTestCase {
         let (sut, session) = makeSUT()
         let serverError = URLError(.badServerResponse) as NSError
         
-        
-        let load =  Task {
-            try await sut.load(imageWithCode: "01d")
-        }
-        
-        try await session.complete(with: .failure(serverError), at: 0)
-        
-        do {
-            _ = try await load.value
-            XCTFail("Expected to fail, but it succeeded")
-        } catch {
-            let nsError = error as NSError
-            XCTAssertEqual(serverError, nsError, "Expected to received \(serverError), but got \(nsError) instead")
-        }
+        try await expect(sut, toCompleteWith: .failure(serverError), when: session, completesWith: .failure(serverError))
     }
     
     func test_load_deliversError_whenAPIReturnsInvalidResponse() async throws {
@@ -98,19 +77,7 @@ final class WeatherImageLoaderTests: XCTestCase {
         let invalidResponseError = WeatherImageServiceError.invalidResponse as NSError
         
         
-        let load =  Task {
-            try await sut.load(imageWithCode: "01d")
-        }
-        
-        try await session.complete(with: .success((imageData, invalidResponse)), at: 0)
-        
-        do {
-            _ = try await load.value
-            XCTFail("Expected to fail, but it succeeded")
-        } catch {
-            let nsError = error as NSError
-            XCTAssertEqual(invalidResponseError, nsError, "Expected to received \(invalidResponseError), but got \(nsError) instead")
-        }
+        try await expect(sut, toCompleteWith: .failure(invalidResponseError), when: session, completesWith: .success((imageData, invalidResponse)))
     }
 
     // Helpers
@@ -118,6 +85,38 @@ final class WeatherImageLoaderTests: XCTestCase {
         let session = MockSession()
         let sut = WeatherImageService(session: session)
         return (sut, session)
+    }
+    
+    private func expect(_ sut: WeatherImageLoader,
+                        toCompleteWith expectedResult: Result<Data, Error>,
+                        when session: MockSession,
+                        completesWith stub: Result<(Data, URLResponse), Error>,
+                        at index: Int = 0,
+                        file: StaticString = #file,
+                        line: UInt = #line) async throws {
+        
+        let load =  Task {
+            try await sut.load(imageWithCode: "01d")
+        }
+        
+        try await session.complete(with: stub, at: index)
+        
+        let receivedResult = await Result(asyncCatching: {
+            try await load.value
+        })
+        
+        switch (expectedResult, receivedResult) {
+            case let (.success(expectedData), .success(receivedData)):
+                XCTAssertEqual(expectedData, receivedData, "Expected to get \(expectedData), but got \(receivedData) instead", file: file, line: line)
+            
+                XCTAssertNotNil(NSImage(data: receivedData), "Expected to get valid image data, but found invalid image data instead", file: file, line: line)
+            
+            case let (.failure(expectedError as NSError), .failure(receivedError as NSError)):
+                XCTAssertEqual(expectedError, receivedError, "Expected to receive \(expectedError), but got \(receivedError) instead", file: file, line: line)
+            
+            case (.success, .failure), (.failure, .success):
+            XCTFail("Expected result: \(expectedResult), but got: \(receivedResult)", file: file, line: line)
+        }
     }
     
     private func makeMockImageData() -> Data {
