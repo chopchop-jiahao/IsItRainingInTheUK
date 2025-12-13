@@ -115,22 +115,8 @@ final class WeatherLoaderTests: XCTestCase {
     private var cheltenham: Location {
         Location(latitude: 51.90, longitude: -2.07)
     }
-
-    private func httpResponse(statusCode: Int) -> HTTPURLResponse {
-        HTTPURLResponse(url: URL(string: "http://my-url.com")!, statusCode: statusCode, httpVersion: nil, headerFields: nil)!
-    }
 }
 
-extension Result {
-    init(asyncCatching body: () async throws -> Success) async where Failure == Error {
-        do {
-            let result = try await body()
-            self = .success(result)
-        } catch {
-            self = .failure(error)
-        }
-    }
-}
 
 private class MockSession: HTTPSession {
     var stubs = [URL: Result<(Data, URLResponse), Error>]()

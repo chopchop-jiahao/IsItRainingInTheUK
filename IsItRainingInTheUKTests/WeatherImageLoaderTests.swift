@@ -37,7 +37,6 @@ class WeatherImageService: WeatherImageLoader {
  if the image can be found in store, returns from store
  if not, calling api and store the image, and return the image data
  
- delivers error when there's a server error
  delivers error when not 200
  delivers error when not valid image data
  delivers image when data valid
@@ -82,6 +81,7 @@ final class WeatherImageLoaderTests: XCTestCase {
             XCTAssertEqual(serverError, nsError)
         }
     }
+    
 
     // Helpers
     private func makeSUT() -> (WeatherImageLoader, MockSession) {
