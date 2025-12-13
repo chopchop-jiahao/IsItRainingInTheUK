@@ -50,19 +50,39 @@ final class WeatherImageLoaderTests: XCTestCase {
     
     func test_load_returnsImageDataFromAPI() async throws {
         let (sut, session) = makeSUT()
+        let imageData = makeMockImageData()
         
-        
-        let loadOperation =  Task {
+        let load =  Task {
             try await sut.load(imageWithCode: "01d")
         }
         
-        session.complete(with: .success((makeMockImageData(), URLResponse())), at: 0)
+        try await session.complete(with: .success((imageData, URLResponse())), at: 0)
         
-        let data = try await loadOperation.value
+        let data = try await load.value
         
         XCTAssertNotNil(NSImage(data: data))
     }
     
+    
+    func test_load_deliversErrorOnServerError() async throws {
+        let (sut, session) = makeSUT()
+        let serverError = URLError(.badServerResponse) as NSError
+        
+        
+        let load =  Task {
+            try await sut.load(imageWithCode: "01d")
+        }
+        
+        try await session.complete(with: .failure(serverError), at: 0)
+        
+        do {
+            _ = try await load.value
+        } catch {
+            let nsError = error as NSError
+            XCTAssertEqual(serverError, nsError)
+        }
+    }
+
     // Helpers
     private func makeSUT() -> (WeatherImageLoader, MockSession) {
         let session = MockSession()
