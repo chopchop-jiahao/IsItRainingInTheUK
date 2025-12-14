@@ -11,6 +11,7 @@ import IsItRainingInTheUK
 class WeatherImageStore: WeatherImagePersistence {
     private let fileManager: FileManager
     private let storeURL: URL
+    private let queue = DispatchQueue(label: "\(WeatherImageStore.self) Queue", qos: .utility, attributes: .concurrent)
     
     init(fileManager: FileManager = .default, storeURL: URL) {
         self.fileManager = fileManager
@@ -20,15 +21,19 @@ class WeatherImageStore: WeatherImagePersistence {
     func find(imageWithCode code: String) async -> Data? {
         let fileURL = storeURL.appendingPathComponent(code)
         
-        return try? Data(contentsOf: fileURL)
+        return queue.sync {
+            try? Data(contentsOf: fileURL)
+        }
     }
     
     func save(imageData: Data, for code: String) {
-        let fileURL = storeURL.appendingPathComponent(code)
-        
-        try? fileManager.createDirectory(at: storeURL, withIntermediateDirectories: true)
-        
-        try? imageData.write(to: fileURL)
+        queue.async(flags: .barrier) { [weak self] in
+            guard let self = self else { return }
+            let fileURL = storeURL.appendingPathComponent(code)
+            
+            try? fileManager.createDirectory(at: storeURL, withIntermediateDirectories: true)
+            try? imageData.write(to: fileURL)
+        }
     }
 }
 
@@ -106,6 +111,22 @@ final class WeatherImagePersistenceTests: XCTestCase {
         
         try await expect(sut1, toRetrieve: expectedData, withCode: code)
         try await expect(sut2, toRetrieve: expectedData, withCode: code)
+    }
+    
+    func test_saveAndFind_withConcurrentAccess_shouldPreventRaceCondition() async throws {
+        let sut = makeSUT()
+        let code = "code"
+        let data = Data(repeating: 0, count: 10_000)
+        
+        let write = Task {
+            sut.save(imageData: data, for: code)
+        }
+        
+        let read = Task {
+            try await expect(sut, toRetrieve: data, withCode: code)
+        }
+        
+        _ = try await (write.value, read.value)
     }
     
     // Helpers
