@@ -67,9 +67,19 @@ final class WeatherImagePersistenceTests: XCTestCase {
         
         sut.save(imageData: expectedData, for: code)
         
-        let retrievedData = await sut.find(imageWithCode: code)
+        try await expect(sut, toRetrieve: expectedData, withCode: code)
+    }
+    
+    func test_save_overridesPreviouslyStoredData() async throws {
+        let sut = makeSUT()
+        let code = "code"
+        let firstData = Data("first".utf8)
+        let latestData = Data("second".utf8)
         
-        XCTAssertEqual(expectedData, retrievedData, "Expected to retrieve \(expectedData), but got \(String(describing: retrievedData)) instead")
+        sut.save(imageData: firstData, for: code)
+        sut.save(imageData: latestData, for: code)
+        
+        try await expect(sut, toRetrieve: latestData, withCode: code)
     }
     
     // Helpers
