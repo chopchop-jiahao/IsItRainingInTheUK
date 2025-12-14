@@ -46,9 +46,15 @@ final class WeatherImagePersistenceTests: XCTestCase {
         let sut = makeSUT()
         let code = "code"
         
-        let data = await sut.find(imageWithCode: code)
+        try await expect(sut, toRetrieve: .none, withCode: code)
+    }
+    
+    func test_find_hasNoSideEeffects() async throws {
+        let sut = makeSUT()
+        let code = "code"
         
-        XCTAssertNil(data)
+        try await expect(sut, toRetrieve: .none, withCode: code)
+        try await expect(sut, toRetrieve: .none, withCode: code)
     }
     
     func test_save_storesDataToStore() async throws {
@@ -63,8 +69,16 @@ final class WeatherImagePersistenceTests: XCTestCase {
         XCTAssertEqual(expectedData, retrievedData, "Expected to retrieve \(expectedData), but got \(String(describing: retrievedData)) instead")
     }
     
+    // Helpers
+    
     private func makeSUT() -> WeatherImagePersistence {
         WeatherImageStore(storeURL: testURL)
+    }
+    
+    private func expect(_ sut: WeatherImagePersistence, toRetrieve expectedData: Data?, withCode code: String, file: StaticString = #file, line: UInt = #line) async throws {
+        let retrievedData = await sut.find(imageWithCode: code)
+        
+        XCTAssertEqual(expectedData, retrievedData, "Expected to retrieve \(String(describing: expectedData)), but got \(String(describing: retrievedData)) instead", file: file, line: line)
     }
     
     private func anyData() -> Data {
