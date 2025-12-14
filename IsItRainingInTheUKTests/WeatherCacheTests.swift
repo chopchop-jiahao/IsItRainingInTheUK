@@ -12,7 +12,7 @@ final class WeatherCacheTests: XCTestCase {
     func test_get_returnsNil_whenNoDataStored() {
         let sut = makeSUT()
         let url = anyURL
-        
+
         expect(sut, toGet: .none, for: url)
     }
 
@@ -65,15 +65,15 @@ final class WeatherCacheTests: XCTestCase {
         let expectedData = try! openWeatherMapData(from: openWeatherMapJsonData())
         // Set the cache first so if read task starts before write, it won't get nil
         sut.set(expectedData, timestamp: Date.now, for: url)
-        
+
         let write = Task {
-            for _ in 0...5 {
+            for _ in 0 ... 5 {
                 sut.set(expectedData, timestamp: Date.now, for: url)
             }
         }
-        
+
         let read = Task {
-            for _ in 0...5 {
+            for _ in 0 ... 5 {
                 expect(sut, toGet: expectedData, for: url)
             }
         }
@@ -84,11 +84,10 @@ final class WeatherCacheTests: XCTestCase {
     private func makeSUT(currentTime: @escaping () -> Date = Date.init) -> WeatherCache {
         WeatherStore(currentTime: currentTime)
     }
-    
+
     private func expect(_ sut: WeatherCache, toGet expectedData: OpenWeatherMapData?, for url: URL, file: StaticString = #file, line: UInt = #line) {
-        
         let retrievedData = sut.get(for: url)
-        
+
         XCTAssertEqual(expectedData, retrievedData, "Expected to retrieve \(String(describing: expectedData)), but got \(String(describing: retrievedData)) instead", file: file, line: line)
     }
 
