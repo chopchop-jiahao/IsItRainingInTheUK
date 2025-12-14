@@ -8,35 +8,6 @@
 import XCTest
 import IsItRainingInTheUK
 
-class WeatherImageStore: WeatherImagePersistence {
-    private let fileManager: FileManager
-    private let storeURL: URL
-    private let queue = DispatchQueue(label: "\(WeatherImageStore.self) Queue", qos: .utility, attributes: .concurrent)
-    
-    init(fileManager: FileManager = .default, storeURL: URL) {
-        self.fileManager = fileManager
-        self.storeURL = storeURL
-    }
-    
-    func find(imageWithCode code: String) async -> Data? {
-        let fileURL = storeURL.appendingPathComponent(code)
-        
-        return queue.sync {
-            try? Data(contentsOf: fileURL)
-        }
-    }
-    
-    func save(imageData: Data, for code: String) {
-        queue.async(flags: .barrier) { [weak self] in
-            guard let self = self else { return }
-            let fileURL = storeURL.appendingPathComponent(code)
-            
-            try? fileManager.createDirectory(at: storeURL, withIntermediateDirectories: true)
-            try? imageData.write(to: fileURL)
-        }
-    }
-}
-
 final class WeatherImagePersistenceTests: XCTestCase {
     
     override func setUp() {
@@ -54,7 +25,7 @@ final class WeatherImagePersistenceTests: XCTestCase {
         try await expect(sut, toRetrieve: .none, withCode: code)
     }
     
-    func test_find_hasNoSideEeffects_whenImageExists() async throws {
+    func test_find_hasNoSideEffects_whenImageExists() async throws {
         let sut = makeSUT()
         let code = "code"
         let expectedData = anyData()
@@ -116,7 +87,7 @@ final class WeatherImagePersistenceTests: XCTestCase {
     func test_saveAndFind_withConcurrentAccess_shouldPreventRaceCondition() async throws {
         let sut = makeSUT()
         let code = "code"
-        let data = Data(repeating: 0, count: 10_000)
+        let data = anyData()
         
         let write = Task {
             sut.save(imageData: data, for: code)

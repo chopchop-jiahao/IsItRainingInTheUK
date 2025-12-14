@@ -12,7 +12,7 @@ public enum WeatherImageServiceError: Error {
     case invalidImageData
 }
 
-public class WeatherImageService: WeatherImageLoader {
+public final class WeatherImageService: WeatherImageLoader {
     private let session: HTTPSession
     private let imageDataValidator: ImageDataValidator
     private let imageStore: WeatherImagePersistence
