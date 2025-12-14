@@ -8,68 +8,12 @@
 import XCTest
 import IsItRainingInTheUK
 
-protocol WeatherImageLoader {
-    func load(imageWithCode: String) async throws -> Data
-}
-
-protocol WeatherImagePersistence {
-    func find(imageWithCode: String) async -> Data?
-    func save(imageData: Data, for code: String)
-}
-
-enum WeatherImageServiceError: Error {
-    case invalidResponse
-    case invalidImageData
-}
-
-protocol ImageDataValidator {
-    func isValid(_ data: Data) -> Bool
-}
-
-class WeatherImageService: WeatherImageLoader {
-    let session: HTTPSession
-    let imageDataValidator: ImageDataValidator
-    let imageStore: WeatherImagePersistence
-    
-    init(session: HTTPSession, imageDataValidator: ImageDataValidator, imageStore: WeatherImagePersistence) {
-        self.session = session
-        self.imageDataValidator = imageDataValidator
-        self.imageStore = imageStore
-    }
-    
-    func load(imageWithCode code: String) async throws -> Data {
-        if let storedData = await imageStore.find(imageWithCode: code), imageDataValidator.isValid(storedData) {
-            return storedData
-        }
-        
-        let url = makeImageRequestUrl(withCode: code)
-        
-        let (data, response) = try await session.data(from: url)
-        
-        guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-            throw WeatherImageServiceError.invalidResponse
-        }
-        
-        guard imageDataValidator.isValid(data) else {
-            throw WeatherImageServiceError.invalidImageData
-        }
-        
-        imageStore.save(imageData: data, for: code)
-        
-        return data
-    }
-    
-    private func makeImageRequestUrl(withCode code: String) -> URL {
-        return URL(string: String(format: OpenWeatherMapAPI.imageURL, code))!
-    }
-}
-
 final class WeatherImageLoaderTests: XCTestCase {
     
     func test_load_deliversImageData_whenAPIReturnsValidResponseAndImageData() async throws {
         let (sut, session, imageDataValidator, _) = makeSUT()
         let validResponse = httpResponse(statusCode: 200)
-        let imageData = Data()
+        let imageData = anyImageData()
         imageDataValidator.stub(validationResults: [true])
         
         try await expect(sut, toCompleteWith: .success(imageData), when: session, completesWith: .success((imageData, validResponse)))
@@ -85,7 +29,7 @@ final class WeatherImageLoaderTests: XCTestCase {
     
     func test_load_deliversError_whenAPIReturnsInvalidResponse() async throws {
         let (sut, session, imageDataValidator, _) = makeSUT()
-        let imageData = Data()
+        let imageData = anyImageData()
         let invalidResponse = httpResponse(statusCode: 201) as URLResponse
         let invalidResponseError = WeatherImageServiceError.invalidResponse as NSError
         imageDataValidator.stub(validationResults: [true])
@@ -96,7 +40,7 @@ final class WeatherImageLoaderTests: XCTestCase {
     
     func test_load_deliversError_whenAPIReturnsInvalidImageData() async throws {
         let (sut, session, imageDataValidator, _) = makeSUT()
-        let invalidData = Data()
+        let invalidData = "invalid data".data(using: .utf8)!
         let validResponse = httpResponse(statusCode: 200) as URLResponse
         let invalidImageDataError = WeatherImageServiceError.invalidImageData as NSError
         imageDataValidator.stub(validationResults: [false])
@@ -107,7 +51,7 @@ final class WeatherImageLoaderTests: XCTestCase {
     
     func test_load_callsAPIAndSavesImage_whenImageNotFoundInStore() async throws {
         let (sut, session, imageDataValidator, store) = makeSUT()
-        let imageData = Data()
+        let imageData = anyImageData()
         let validResponse = httpResponse(statusCode: 200) as URLResponse
         imageDataValidator.stub(validationResults: [true])
         
@@ -122,13 +66,13 @@ final class WeatherImageLoaderTests: XCTestCase {
     func test_load_callsAPIAndStoresImage_whenImageIsInvalidInStore() async throws {
         let (sut, session, imageDataValidator, store) = makeSUT()
         let code = "01d"
-        let imageData = Data()
+        let imageData = anyImageData()
         let validResponse = httpResponse(statusCode: 200) as URLResponse
         store.stubImage(code: code)
         imageDataValidator.stub(validationResults: [false, true])
         
         
-        try await expect(sut, toLoadImageCode: code, toCompleteWith: .success(imageData), when: session, completesWith: .success((imageData, validResponse)))
+        try await expect(sut, toLoadImageForCode: code, toCompleteWith: .success(imageData), when: session, completesWith: .success((imageData, validResponse)))
         
         XCTAssertEqual([.find, .save], store.actions, "Expected store to find image and store it after a successful API call, but the actions are \(store.actions)")
         
@@ -166,7 +110,7 @@ final class WeatherImageLoaderTests: XCTestCase {
     }
     
     private func expect(_ sut: WeatherImageLoader,
-                        toLoadImageCode code: String = "01d",
+                        toLoadImageForCode code: String = "01d",
                         toCompleteWith expectedResult: Result<Data, Error>,
                         when session: MockSession,
                         completesWith stub: Result<(Data, URLResponse), Error>,
@@ -195,6 +139,10 @@ final class WeatherImageLoaderTests: XCTestCase {
             XCTFail("Expected result: \(expectedResult), but got: \(receivedResult)", file: file, line: line)
         }
     }
+    
+    private func anyImageData() -> Data {
+        Data()
+    }
 }
 
 private class MockSession: HTTPSession, AsyncStubbed {
@@ -212,6 +160,11 @@ private class MockValidator: ImageDataValidator {
     private var deliverIndex: Int  = 0
     
     func isValid(_ data: Data) -> Bool {
+        guard deliverIndex <= results.count else {
+            XCTFail("MockValidator: not enough stubbed results")
+            return false
+        }
+        
         let result = results[deliverIndex]
         
         deliverIndex += 1
