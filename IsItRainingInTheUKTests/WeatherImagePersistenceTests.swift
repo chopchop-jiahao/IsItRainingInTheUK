@@ -96,6 +96,18 @@ final class WeatherImagePersistenceTests: XCTestCase {
         try await expect(sut, toRetrieve: data2, withCode: code2)
     }
     
+    func test_save_retrievesSameDataByDifferentInstances() async throws {
+        let sut1 = makeSUT()
+        let sut2 = makeSUT()
+        let code = "code"
+        let expectedData = anyData()
+
+        sut1.save(imageData: expectedData, for: code)
+        
+        try await expect(sut1, toRetrieve: expectedData, withCode: code)
+        try await expect(sut2, toRetrieve: expectedData, withCode: code)
+    }
+    
     // Helpers
     
     private func makeSUT() -> WeatherImagePersistence {
