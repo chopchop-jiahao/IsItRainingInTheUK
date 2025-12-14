@@ -135,10 +135,19 @@ final class WeatherImageLoaderTests: XCTestCase {
         XCTAssertEqual(1, session.continuations.count, "Expected session to call API once, but it was called \(session.continuations.count) times")
     }
 
-    func test_load_retrievesFromStoreAndDoesNotCallAPI_whenImageFoundInStore() {
-        // check exist action
-        // retrieve action
-        // 0 session calls
+    func test_load_retrievesFromStoreAndDoesNotCallAPI_whenImageFoundInStore() async throws {
+        let (sut, session, imageDataValidator, store) = makeSUT()
+        let code = "01d"
+        store.stubImage(code: code)
+        imageDataValidator.stub(validationResults: [true])
+        
+        let data = try await sut.load(imageWithCode: code)
+        
+        XCTAssertNotNil(data, "Expected to retrieve image data, but found nil instead")
+        
+        XCTAssertEqual([.find], store.actions, "Expected store to find image and return it, but the actions are \(store.actions)")
+        
+        XCTAssertEqual(0, session.continuations.count, "Expected session not to call API, but it was called \(session.continuations.count) times")
     }
     
     // Helpers
