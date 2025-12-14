@@ -8,11 +8,6 @@
 import Foundation
 import IsItRainingInTheUK
 
-enum WeatherCacheAction {
-    case get
-    case set
-}
-
 func openWeatherMapJsonData() -> Data {
     openWeatherMapDataJsonString.data(using: .utf8)!
 }

@@ -139,6 +139,11 @@ private class MockSession: HTTPSession {
 }
 
 private class MockStore: WeatherCache {
+    enum WeatherCacheAction {
+        case get
+        case set
+    }
+
     var maxAge: TimeInterval {
         600
     }

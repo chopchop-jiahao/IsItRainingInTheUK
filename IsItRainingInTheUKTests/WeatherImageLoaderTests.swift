@@ -12,6 +12,11 @@ protocol WeatherImageLoader {
     func load(imageWithCode: String) async throws -> Data
 }
 
+protocol WeatherImagePersistence {
+    func find(imageWithCode: String) async -> Data?
+    func save(imageData: Data, for code: String)
+}
+
 enum WeatherImageServiceError: Error {
     case invalidResponse
     case invalidImageData
@@ -24,13 +29,20 @@ protocol ImageDataValidator {
 class WeatherImageService: WeatherImageLoader {
     let session: HTTPSession
     let imageDataValidator: ImageDataValidator
+    let imageStore: WeatherImagePersistence
     
-    init(session: HTTPSession, imageDataValidator: ImageDataValidator) {
+    init(session: HTTPSession, imageDataValidator: ImageDataValidator, imageStore: WeatherImagePersistence) {
         self.session = session
         self.imageDataValidator = imageDataValidator
+        self.imageStore = imageStore
     }
     
     func load(imageWithCode code: String) async throws -> Data {
+        if let storedData = await imageStore.find(imageWithCode: code) {
+            return storedData
+        }
+        
+        
         let url = makeImageRequestUrl(withCode: code)
         
         let (data, response) = try await session.data(from: url)
@@ -43,6 +55,8 @@ class WeatherImageService: WeatherImageLoader {
             throw WeatherImageServiceError.invalidImageData
         }
         
+        imageStore.save(imageData: data, for: code)
+        
         return data
     }
     
@@ -51,20 +65,10 @@ class WeatherImageService: WeatherImageLoader {
     }
 }
 
-/*
- load weather image  with icon name
- if the image can be found in store, returns from store
- if not, calling api and store the image, and return the image data
- 
- it saves image to store
- delivers image from store
- calls api if file's not in store
- */
-
 final class WeatherImageLoaderTests: XCTestCase {
     
     func test_load_deliversImageData_whenAPIReturnsValidResponseAndImageData() async throws {
-        let (sut, session, imageDataValidator) = makeSUT()
+        let (sut, session, imageDataValidator, _) = makeSUT()
         let validResponse = httpResponse(statusCode: 200)
         let imageData = Data()
         imageDataValidator.result = true
@@ -74,14 +78,14 @@ final class WeatherImageLoaderTests: XCTestCase {
     
     
     func test_load_deliversError_whenAPIReturnsServerError() async throws {
-        let (sut, session, _) = makeSUT()
+        let (sut, session, _, _) = makeSUT()
         let serverError = URLError(.badServerResponse) as NSError
         
         try await expect(sut, toCompleteWith: .failure(serverError), when: session, completesWith: .failure(serverError))
     }
     
     func test_load_deliversError_whenAPIReturnsInvalidResponse() async throws {
-        let (sut, session, imageDataValidator) = makeSUT()
+        let (sut, session, imageDataValidator, _) = makeSUT()
         let imageData = Data()
         let invalidResponse = httpResponse(statusCode: 201) as URLResponse
         let invalidResponseError = WeatherImageServiceError.invalidResponse as NSError
@@ -92,7 +96,7 @@ final class WeatherImageLoaderTests: XCTestCase {
     }
     
     func test_load_deliversError_whenAPIReturnsInvalidImageData() async throws {
-        let (sut, session, imageDataValidator) = makeSUT()
+        let (sut, session, imageDataValidator, _) = makeSUT()
         let invalidData = Data()
         let validResponse = httpResponse(statusCode: 200) as URLResponse
         let invalidImageDataError = WeatherImageServiceError.invalidImageData as NSError
@@ -101,18 +105,44 @@ final class WeatherImageLoaderTests: XCTestCase {
         
         try await expect(sut, toCompleteWith: .failure(invalidImageDataError), when: session, completesWith: .success((invalidData, validResponse)))
     }
+    
+    func test_load_callsAPIAndSavesImage_whenImageNotFoundInStore() async throws {
+        let (sut, session, imageDataValidator, store) = makeSUT()
+        let imageData = Data()
+        let validResponse = httpResponse(statusCode: 200) as URLResponse
+        imageDataValidator.result = true
+        
+        
+        try await expect(sut, toCompleteWith: .success(imageData), when: session, completesWith: .success((imageData, validResponse)))
+        
+        XCTAssertEqual([.find, .save], store.actions, "Expected store to find image and store it after a successful API call, but the actions are \(store.actions)")
+        
+        XCTAssertEqual(1, session.continuations.count, "Expected session to call API once, but it was called \(session.continuations.count) times")
+    }
+    
+    func test_load_callsAPIAndStoresImage_whenImageIsInvalidInStore() {
+        
+    }
 
+    func test_load_retrievesFromStoreAndDoesNotCallAPI_whenImageFoundInStore() {
+        // check exist action
+        // retrieve action
+        // 0 session calls
+    }
+    
     // Helpers
-    private func makeSUT() -> (WeatherImageLoader, MockSession, MockValidator) {
+    private func makeSUT() -> (WeatherImageLoader, MockSession, MockValidator, MockImageStore) {
         let session = MockSession()
         let validator = MockValidator()
-        let sut = WeatherImageService(session: session, imageDataValidator: validator)
+        let imageStore = MockImageStore()
+        let sut = WeatherImageService(session: session, imageDataValidator: validator, imageStore: imageStore)
         
         trackForMemoryLeaks(session)
         trackForMemoryLeaks(validator)
+        trackForMemoryLeaks(imageStore)
         trackForMemoryLeaks(sut)
         
-        return (sut, session, validator)
+        return (sut, session, validator, imageStore)
     }
     
     private func expect(_ sut: WeatherImageLoader,
@@ -151,7 +181,6 @@ private class MockSession: HTTPSession, AsyncStubbed {
     
     typealias Stub = (Data, URLResponse)
     
-    
     func data(from url: URL) async throws -> (Data, URLResponse) {
         try await wait()
     }
@@ -162,5 +191,28 @@ private class MockValidator: ImageDataValidator {
     
     func isValid(_ data: Data) -> Bool {
         return result
+    }
+}
+
+private class MockImageStore: WeatherImagePersistence {
+    public private(set) var actions = [Action]()
+    var images = [String]()
+    
+    func find(imageWithCode code: String) async -> Data? {
+        actions.append(.find)
+        
+        let imageExists = images.first { $0 == code } != nil
+        
+        return imageExists ? Data() : nil
+    }
+    
+    func save(imageData: Data, for code: String) {
+        actions.append(.save)
+        images.append(code)
+    }
+    
+    enum Action: Equatable {
+        case find
+        case save
     }
 }
