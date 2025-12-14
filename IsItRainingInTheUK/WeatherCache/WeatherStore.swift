@@ -7,7 +7,7 @@
 
 import Foundation
 
-public class WeatherStore: WeatherCache {
+public final class WeatherStore: WeatherCache {
     private var cache = [URL: CachedWeatherData]()
     private let currentTime: () -> Date
     private let queue = DispatchQueue(label: "\(WeatherStore.self)Queue", qos: .userInitiated, attributes: .concurrent)
