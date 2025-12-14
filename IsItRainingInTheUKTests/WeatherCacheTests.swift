@@ -59,25 +59,26 @@ final class WeatherCacheTests: XCTestCase {
         expect(sut, toGet: .none, for: url)
     }
 
-    func test_set_executesExclusively_blocksConcurrentOperations() async throws {
+    func test_setAndGet_withConcurrentAccess_shouldPreventRaceCondition() async throws {
         let sut = makeSUT()
-
-        let concurrentCaller1 = Task {
-            for _ in 0 ... 3 {
-                try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: Date(), for: anyURL)
+        let url = anyURL
+        let expectedData = try! openWeatherMapData(from: openWeatherMapJsonData())
+        // Set the cache first so if read task starts before write, it won't get nil
+        sut.set(expectedData, timestamp: Date.now, for: url)
+        
+        let write = Task {
+            for _ in 0...5 {
+                sut.set(expectedData, timestamp: Date.now, for: url)
+            }
+        }
+        
+        let read = Task {
+            for _ in 0...5 {
+                expect(sut, toGet: expectedData, for: url)
             }
         }
 
-        let concurrentCaller2 = Task {
-            for _ in 0 ... 3 {
-                try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: Date(), for: anyURL)
-            }
-        }
-
-        _ = try await (concurrentCaller1.value, concurrentCaller2.value)
-
-        let result = sut.get(for: anyURL)
-        XCTAssertNotNil(result, "Expected data to be intact after concurrent operations")
+        _ = await (write.value, read.value)
     }
 
     private func makeSUT(currentTime: @escaping () -> Date = Date.init) -> WeatherCache {
