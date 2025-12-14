@@ -24,7 +24,7 @@ extension AsyncStubbed {
     /// Each call to this method adds a continuation to the array.
     func wait() async throws -> Stub {
         try await withCheckedThrowingContinuation { continuation in
-            //This runs immediately
+            // This runs immediately
             queue.sync(flags: .barrier) {
                 // Store the continuation so we can resume it later from the test
                 self.continuations.append(continuation)
@@ -43,7 +43,7 @@ extension AsyncStubbed {
     ///   - index: Which paused call to complete (0 for first, 1 for second, etc.)
     func complete(with result: Result<Stub, Error>, at index: Int) async throws {
         let start = Date()
-        
+
         // Wait until continuation exists at this index
         while queue.sync(execute: { continuations.count }) <= index {
             if Date().timeIntervalSince(start) > 1.0 {
@@ -51,14 +51,14 @@ extension AsyncStubbed {
             }
             await Task.yield()
         }
-        
+
         let continuation = queue.sync { continuations[index] }
-        
+
         switch result {
-        case let .success(value):
-            continuation.resume(returning: value)
-        case let .failure(error):
-            continuation.resume(throwing: error)
+            case let .success(value):
+                continuation.resume(returning: value)
+            case let .failure(error):
+                continuation.resume(throwing: error)
         }
     }
 
