@@ -73,13 +73,27 @@ final class WeatherImagePersistenceTests: XCTestCase {
     func test_save_overridesPreviouslyStoredData() async throws {
         let sut = makeSUT()
         let code = "code"
-        let firstData = Data("first".utf8)
-        let latestData = Data("second".utf8)
+        let firstData = anyData()
+        let latestData = anyData()
         
         sut.save(imageData: firstData, for: code)
         sut.save(imageData: latestData, for: code)
         
         try await expect(sut, toRetrieve: latestData, withCode: code)
+    }
+    
+    func test_save_storesDataSeparatelyWithDifferentCodes() async throws {
+        let sut = makeSUT()
+        let code1 = "code 1"
+        let code2 = "code 2"
+        let data1 = anyData()
+        let data2 = anyData()
+        
+        sut.save(imageData: data1, for: code1)
+        sut.save(imageData: data2, for: code2)
+        
+        try await expect(sut, toRetrieve: data1, withCode: code1)
+        try await expect(sut, toRetrieve: data2, withCode: code2)
     }
     
     // Helpers
@@ -95,7 +109,7 @@ final class WeatherImagePersistenceTests: XCTestCase {
     }
     
     private func anyData() -> Data {
-        Data("image".utf8)
+        Data(UUID().uuidString.utf8)
     }
     
     private var testURL: URL {
