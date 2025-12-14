@@ -117,7 +117,6 @@ final class WeatherLoaderTests: XCTestCase {
     }
 }
 
-
 private class MockSession: HTTPSession {
     var stubs = [URL: Result<(Data, URLResponse), Error>]()
     var calls = [URL]()

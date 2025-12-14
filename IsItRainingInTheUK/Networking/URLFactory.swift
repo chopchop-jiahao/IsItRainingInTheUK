@@ -25,12 +25,12 @@ public enum URLFactory {
             URLQueryItem(name: "appid", value: OpenWeatherMapAPI.key)
         ])
     }
-    
+
     public static func getImageRequestUrl(withCode code: String) throws -> URL {
-        guard let url =  URL(string: String(format: OpenWeatherMapAPI.imageURL, code)) else {
+        guard let url = URL(string: String(format: OpenWeatherMapAPI.imageURL, code)) else {
             throw URLFactoryError.invalidURL
         }
-        
+
         return url
     }
 }
