@@ -12,56 +12,51 @@ final class WeatherCacheTests: XCTestCase {
     func test_get_returnsNil_whenNoDataStored() {
         let sut = makeSUT()
         let url = anyURL
-
-        let data = sut.get(for: url)
-
-        XCTAssertNil(data)
+        
+        expect(sut, toGet: .none, for: url)
     }
 
     func test_get_returnsStoredData_whenDataIsStored() throws {
         let sut = makeSUT()
-        let data = openWeatherMapJsonData()
         let url = anyURL
+        let expectedData = try! openWeatherMapData(from: openWeatherMapJsonData())
 
-        try sut.set(openWeatherMapData(from: data), timestamp: Date.now, for: url)
+        sut.set(expectedData, timestamp: Date.now, for: url)
 
-        XCTAssertNotNil(sut.get(for: url))
+        expect(sut, toGet: expectedData, for: url)
     }
 
-    func test_get_returnsNil_whenDataOnExpiration() throws {
+    func test_get_returnsNoData_whenDataOnExpiration() throws {
         let now = Date.now
         let sut = makeSUT(currentTime: { now })
         let url = anyURL
+        let data = try! openWeatherMapData(from: openWeatherMapJsonData())
         let timestamp = makeTimestampOnExpiration(from: now, maxAge: sut.maxAge)
-        try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: timestamp, for: url)
+        sut.set(data, timestamp: timestamp, for: url)
 
-        let cache = sut.get(for: url)
-
-        XCTAssertNil(cache)
+        expect(sut, toGet: .none, for: url)
     }
 
     func test_get_returnsData_whenDataNotExpired() throws {
         let now = Date.now
         let sut = makeSUT(currentTime: { now })
         let url = anyURL
+        let expectedData = try! openWeatherMapData(from: openWeatherMapJsonData())
         let timestamp = makeTimestampBeforeExpiration(from: now, maxAge: sut.maxAge)
-        try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: timestamp, for: url)
+        sut.set(expectedData, timestamp: timestamp, for: url)
 
-        let cache = sut.get(for: url)
-
-        XCTAssertNotNil(cache)
+        expect(sut, toGet: expectedData, for: url)
     }
 
-    func test_get_returnsNil_whenDataExpired() throws {
+    func test_get_returnsNoData_whenDataExpired() throws {
         let now = Date.now
         let sut = makeSUT(currentTime: { now })
         let url = anyURL
+        let data = try! openWeatherMapData(from: openWeatherMapJsonData())
         let timestamp = makeTimestampAfterExpiration(from: now, maxAge: sut.maxAge)
-        try sut.set(openWeatherMapData(from: openWeatherMapJsonData()), timestamp: timestamp, for: url)
+        sut.set(data, timestamp: timestamp, for: url)
 
-        let cache = sut.get(for: url)
-
-        XCTAssertNil(cache)
+        expect(sut, toGet: .none, for: url)
     }
 
     func test_set_executesExclusively_blocksConcurrentOperations() async throws {
@@ -87,6 +82,13 @@ final class WeatherCacheTests: XCTestCase {
 
     private func makeSUT(currentTime: @escaping () -> Date = Date.init) -> WeatherCache {
         WeatherStore(currentTime: currentTime)
+    }
+    
+    private func expect(_ sut: WeatherCache, toGet expectedData: OpenWeatherMapData?, for url: URL, file: StaticString = #file, line: UInt = #line) {
+        
+        let retrievedData = sut.get(for: url)
+        
+        XCTAssertEqual(expectedData, retrievedData, "Expected to retrieve \(String(describing: expectedData)), but got \(String(describing: retrievedData)) instead", file: file, line: line)
     }
 
     private var anyURL: URL {
