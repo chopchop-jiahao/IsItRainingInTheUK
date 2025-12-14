@@ -49,12 +49,15 @@ final class WeatherImagePersistenceTests: XCTestCase {
         try await expect(sut, toRetrieve: .none, withCode: code)
     }
     
-    func test_find_hasNoSideEeffects() async throws {
+    func test_find_hasNoSideEeffects_whenImageExists() async throws {
         let sut = makeSUT()
         let code = "code"
+        let expectedData = anyData()
         
-        try await expect(sut, toRetrieve: .none, withCode: code)
-        try await expect(sut, toRetrieve: .none, withCode: code)
+        sut.save(imageData: expectedData, for: code)
+        
+        try await expect(sut, toRetrieve: expectedData, withCode: code)
+        try await expect(sut, toRetrieve: expectedData, withCode: code)
     }
     
     func test_save_storesDataToStore() async throws {
