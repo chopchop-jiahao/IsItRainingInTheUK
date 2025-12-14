@@ -8,17 +8,16 @@
 import Foundation
 import IsItRainingInTheUK
 
-enum WeatherCacheAction {
-    case get
-    case set
-}
-
 func openWeatherMapJsonData() -> Data {
     openWeatherMapDataJsonString.data(using: .utf8)!
 }
 
 func openWeatherMapData(from data: Data) throws -> OpenWeatherMapData {
     try JSONDecoder().decode(OpenWeatherMapData.self, from: data)
+}
+
+func httpResponse(statusCode: Int, url: URL = URL(string: "http://my-url.com")!) -> HTTPURLResponse {
+    HTTPURLResponse(url: url, statusCode: statusCode, httpVersion: nil, headerFields: nil)!
 }
 
 var openWeatherMapDataJsonString: String {
