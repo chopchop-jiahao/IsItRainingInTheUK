@@ -94,9 +94,9 @@ final class WeatherImageLoaderTests: XCTestCase {
         
         do {
             _ = try await sut.load(imageWithCode: "01d")
-            XCTFail("Expected the test to throw, but it succeeded")
+            XCTFail("Expected load to fail with\(urlError), but it succeeded")
         } catch {
-            XCTAssertEqual(urlError, error as NSError, "Expected to received \(urlError), but got \(error) else")
+            XCTAssertEqual(urlError, error as NSError, "Expected to fail with \(urlError), but got \(error) else")
         }
     }
 
@@ -115,22 +115,6 @@ final class WeatherImageLoaderTests: XCTestCase {
         trackForMemoryLeaks(sut)
 
         return (sut, session, validator, imageStore)
-    }
-    
-    private class MockURLProvider {
-        let error: Error?
-        
-        init(error: Error? = nil) {
-            self.error = error
-        }
-        
-        func getImageRequestUrl(with code: String) throws -> URL {
-            if let error = error {
-                throw error
-            }
-            
-            return URL(string: "http://\(code).a-url.com")!
-        }
     }
 
     private func expect(
@@ -226,5 +210,21 @@ private class MockImageStore: WeatherImagePersistence {
     enum Action: Equatable {
         case find
         case save
+    }
+}
+
+private class MockURLProvider {
+    let error: Error?
+    
+    init(error: Error?) {
+        self.error = error
+    }
+    
+    func getImageRequestUrl(with code: String) throws -> URL {
+        if let error = error {
+            throw error
+        }
+        
+        return URL(string: "http://\(code).a-url.com")!
     }
 }

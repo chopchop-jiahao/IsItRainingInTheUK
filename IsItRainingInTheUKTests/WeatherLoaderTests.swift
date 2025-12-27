@@ -10,9 +10,9 @@ import XCTest
 
 final class WeatherLoaderTests: XCTestCase {
     func test_load_deliversWeatherData() async throws {
-        let (session, sut, _) = makeSUT()
+        let (session, sut, _, urlProvider) = makeSUT()
         let location = cheltenham
-        let url = try URLFactory.getURL(for: location)
+        let url = try urlProvider.getURL(for: location)
         let testData = openWeatherMapJsonData()
         let expectedData = try openWeatherMapData(from: testData)
         session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
@@ -21,9 +21,9 @@ final class WeatherLoaderTests: XCTestCase {
     }
 
     func test_load_deliverError_whenAPIReturnsError() async throws {
-        let (session, sut, _) = makeSUT()
+        let (session, sut, _, urlProvider) = makeSUT()
         let location = cheltenham
-        let url = try URLFactory.getURL(for: location)
+        let url = try urlProvider.getURL(for: location)
         let serverError = URLError(.badServerResponse)
         session.stubs[url] = .failure(serverError)
 
@@ -31,9 +31,9 @@ final class WeatherLoaderTests: XCTestCase {
     }
 
     func test_load_deliversError_whenAPIReturnsInvalidData() async throws {
-        let (session, sut, _) = makeSUT()
+        let (session, sut, _, urlProvider) = makeSUT()
         let location = cheltenham
-        let url = try URLFactory.getURL(for: location)
+        let url = try urlProvider.getURL(for: location)
         let testData = "Invalid json data".data(using: .utf8)!
         session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
 
@@ -41,9 +41,9 @@ final class WeatherLoaderTests: XCTestCase {
     }
 
     func test_load_deliversError_whenAPIReturnsInvalidResponse() async throws {
-        let (session, sut, _) = makeSUT()
+        let (session, sut, _, urlProvider) = makeSUT()
         let location = cheltenham
-        let url = try URLFactory.getURL(for: location)
+        let url = try urlProvider.getURL(for: location)
         let testData = "Invalid json data".data(using: .utf8)!
         session.stubs[url] = .success((testData, httpResponse(statusCode: 201)))
 
@@ -51,9 +51,9 @@ final class WeatherLoaderTests: XCTestCase {
     }
 
     func test_load_cachesData_AfterRetrievingDataFromAPI() async throws {
-        let (session, sut, store) = makeSUT()
+        let (session, sut, store, urlProvider) = makeSUT()
         let location = cheltenham
-        let url = try URLFactory.getURL(for: location)
+        let url = try urlProvider.getURL(for: location)
         let testData = openWeatherMapJsonData()
         let expectedData = try openWeatherMapData(from: testData)
         session.stubs[url] = .success((testData, httpResponse(statusCode: 200)))
@@ -65,9 +65,9 @@ final class WeatherLoaderTests: XCTestCase {
     }
 
     func test_load_retrieveDataFromStore_whenThereIsCachedData() async throws {
-        let (session, sut, store) = makeSUT()
+        let (session, sut, store, urlProvider) = makeSUT()
         let location = cheltenham
-        let url = try URLFactory.getURL(for: location)
+        let url = try urlProvider.getURL(for: location)
         let testData = openWeatherMapJsonData()
         let expectedData = try openWeatherMapData(from: testData)
         store.stub(expectedData, for: url)
@@ -77,18 +77,32 @@ final class WeatherLoaderTests: XCTestCase {
         XCTAssertEqual([], session.calls, "Expected no calls to the API, but found \(session.calls) calls instead")
         XCTAssertEqual([.get], store.actions, "Expected get to be called to retrieve cached data, but the actions are \(store.actions)")
     }
+    
+    func test_load_deliversError_whenURLProviderThrowsError() async throws {
+        let urlError = NSError(domain: "Invalid URL error", code: 0)
+        let location = cheltenham
+        let (_, sut, _, _) = makeSUT(withURLProviderError: urlError)
+        
+        do {
+            _ = try await sut.load(for: location)
+            XCTFail("Expected load to fail with \(urlError), but it succeeded")
+        } catch {
+            XCTAssertEqual(urlError, error as NSError, "Expected to fail with \(urlError), but got \(error) instead")
+        }
+    }
 
     // Helpers
-    private func makeSUT() -> (session: MockSession, WeatherLoader, store: MockStore) {
+    private func makeSUT(withURLProviderError error: Error? = nil) -> (session: MockSession, WeatherLoader, store: MockStore, urlProvider: MockURLProvider) {
         let session = MockSession()
         let store = MockStore()
-        let sut = WeatherService(session: session, store: store)
+        let urlProvider = MockURLProvider(error: error)
+        let sut = WeatherService(session: session, store: store, urlProvider: urlProvider.getURL)
 
         trackForMemoryLeaks(session)
         trackForMemoryLeaks(store)
         trackForMemoryLeaks(sut)
 
-        return (session, sut, store)
+        return (session, sut, store, urlProvider)
     }
 
     private func expect(_ sut: WeatherLoader, toRetrieve expectedResult: Result<OpenWeatherMapData, Error>, for location: Location, file: StaticString = #file, line: UInt = #line) async {
@@ -162,5 +176,21 @@ private class MockStore: WeatherCache {
 
     func stub(_ data: OpenWeatherMapData, for url: URL) {
         storage[url] = data
+    }
+}
+
+private struct MockURLProvider {
+    let error: Error?
+    
+    init(error: Error?) {
+        self.error = error
+    }
+    
+    func getURL(for location: Location) throws -> URL {
+        if let error = error {
+            throw error
+        }
+        
+        return URL(string: "http://location.latitude=\(location.latitude)&longitude=\(location.longitude).com")!
     }
 }

@@ -15,10 +15,12 @@ public enum WeatherServiceError: Error {
 public final class WeatherService: WeatherLoader {
     let session: HTTPSession
     let store: WeatherCache
+    let getURLForLocation: (Location) throws -> URL
 
-    public init(session: HTTPSession, store: WeatherCache) {
+    public init(session: HTTPSession, store: WeatherCache, urlProvider getURLForLocation: @escaping (Location) throws -> URL) {
         self.session = session
         self.store = store
+        self.getURLForLocation = getURLForLocation
     }
 
     /// Loads weather data for the specified location.
@@ -30,7 +32,7 @@ public final class WeatherService: WeatherLoader {
     /// - Returns: The weather data for the specified location.
     /// - Throws: WeatherServiceError, URLFactoryError and errors from the server
     public func load(for location: Location) async throws -> OpenWeatherMapData {
-        let url = try URLFactory.getURL(for: location)
+        let url = try getURLForLocation(location)
 
         if let weatherData = store.get(for: url) {
             return weatherData
