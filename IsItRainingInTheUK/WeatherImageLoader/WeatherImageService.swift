@@ -16,11 +16,13 @@ public final class WeatherImageService: WeatherImageLoader {
     private let session: HTTPSession
     private let imageDataValidator: ImageDataValidator
     private let imageStore: WeatherImagePersistence
+    private let getImageRequestUrlWithCode: (String) throws -> URL
 
-    public init(session: HTTPSession, imageDataValidator: ImageDataValidator, imageStore: WeatherImagePersistence) {
+    public init(session: HTTPSession, imageDataValidator: ImageDataValidator, imageStore: WeatherImagePersistence, urlProvider getImageRequestUrlWithCode: @escaping (String) throws -> URL) {
         self.session = session
         self.imageDataValidator = imageDataValidator
         self.imageStore = imageStore
+        self.getImageRequestUrlWithCode = getImageRequestUrlWithCode
     }
 
     public func load(imageWithCode code: String) async throws -> Data {
@@ -28,7 +30,7 @@ public final class WeatherImageService: WeatherImageLoader {
             return storedData
         }
 
-        let url = try URLFactory.getImageRequestUrl(withCode: code)
+        let url = try getImageRequestUrlWithCode(code)
 
         let (data, response) = try await session.data(from: url)
 
