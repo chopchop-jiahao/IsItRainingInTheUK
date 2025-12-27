@@ -87,11 +87,11 @@ final class WeatherImageLoaderTests: XCTestCase {
 
         XCTAssertEqual(0, session.continuations.count, "Expected session not to call API, but it was called \(session.continuations.count) times")
     }
-    
+
     func test_load_deliversErrror_whenURLProviderThrowsError() async {
         let urlError = NSError(domain: "Invalid URL", code: 0)
         let (sut, _, _, _) = makeSUT(withURLProviderError: urlError)
-        
+
         do {
             _ = try await sut.load(imageWithCode: "01d")
             XCTFail("Expected load to fail with\(urlError), but it succeeded")
@@ -111,7 +111,7 @@ final class WeatherImageLoaderTests: XCTestCase {
         trackForMemoryLeaks(session)
         trackForMemoryLeaks(validator)
         trackForMemoryLeaks(imageStore)
-        
+
         trackForMemoryLeaks(sut)
 
         return (sut, session, validator, imageStore)
@@ -215,16 +215,16 @@ private class MockImageStore: WeatherImagePersistence {
 
 private class MockURLProvider {
     let error: Error?
-    
+
     init(error: Error?) {
         self.error = error
     }
-    
+
     func getImageRequestUrl(with code: String) throws -> URL {
-        if let error = error {
+        if let error {
             throw error
         }
-        
+
         return URL(string: "http://\(code).a-url.com")!
     }
 }

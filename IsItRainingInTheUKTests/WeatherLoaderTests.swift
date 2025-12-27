@@ -77,12 +77,12 @@ final class WeatherLoaderTests: XCTestCase {
         XCTAssertEqual([], session.calls, "Expected no calls to the API, but found \(session.calls) calls instead")
         XCTAssertEqual([.get], store.actions, "Expected get to be called to retrieve cached data, but the actions are \(store.actions)")
     }
-    
+
     func test_load_deliversError_whenURLProviderThrowsError() async throws {
         let urlError = NSError(domain: "Invalid URL error", code: 0)
         let location = cheltenham
         let (_, sut, _, _) = makeSUT(withURLProviderError: urlError)
-        
+
         do {
             _ = try await sut.load(for: location)
             XCTFail("Expected load to fail with \(urlError), but it succeeded")
@@ -181,16 +181,16 @@ private class MockStore: WeatherCache {
 
 private struct MockURLProvider {
     let error: Error?
-    
+
     init(error: Error?) {
         self.error = error
     }
-    
+
     func getURL(for location: Location) throws -> URL {
-        if let error = error {
+        if let error {
             throw error
         }
-        
+
         return URL(string: "http://location.latitude=\(location.latitude)&longitude=\(location.longitude).com")!
     }
 }
