@@ -87,20 +87,50 @@ final class WeatherImageLoaderTests: XCTestCase {
 
         XCTAssertEqual(0, session.continuations.count, "Expected session not to call API, but it was called \(session.continuations.count) times")
     }
+    
+    func test_load_deliversErrror_whenURLProviderThrowsError() async {
+        let urlError = NSError(domain: "Invalid URL", code: 0)
+        let (sut, _, _, _) = makeSUT(withURLProviderError: urlError)
+        
+        do {
+            _ = try await sut.load(imageWithCode: "01d")
+            XCTFail("Expected the test to throw, but it succeeded")
+        } catch {
+            XCTAssertEqual(urlError, error as NSError, "Expected to received \(urlError), but got \(error) else")
+        }
+    }
 
     // Helpers
-    private func makeSUT() -> (WeatherImageLoader, MockSession, MockValidator, MockImageStore) {
+    private func makeSUT(withURLProviderError error: Error? = nil) -> (WeatherImageLoader, MockSession, MockValidator, MockImageStore) {
         let session = MockSession()
         let validator = MockValidator()
         let imageStore = MockImageStore()
-        let sut = WeatherImageService(session: session, imageDataValidator: validator, imageStore: imageStore)
+        let urlProvider = MockURLProvider(error: error)
+        let sut = WeatherImageService(session: session, imageDataValidator: validator, imageStore: imageStore, urlProvider: urlProvider.getImageRequestUrl)
 
         trackForMemoryLeaks(session)
         trackForMemoryLeaks(validator)
         trackForMemoryLeaks(imageStore)
+        
         trackForMemoryLeaks(sut)
 
         return (sut, session, validator, imageStore)
+    }
+    
+    private class MockURLProvider {
+        let error: Error?
+        
+        init(error: Error? = nil) {
+            self.error = error
+        }
+        
+        func getImageRequestUrl(with code: String) throws -> URL {
+            if let error = error {
+                throw error
+            }
+            
+            return URL(string: "http://\(code).a-url.com")!
+        }
     }
 
     private func expect(
